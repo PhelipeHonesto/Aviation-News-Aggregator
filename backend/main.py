@@ -43,7 +43,7 @@ def ingest_news():
             existing_news = json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
         existing_news = []
-    
+
     existing_links = {article['link'] for article in existing_news}
 
     # --- Fetch new news from agents ---
@@ -58,11 +58,11 @@ def ingest_news():
 
     # --- Combine and save ---
     combined_news = unique_new_articles + existing_news
-    
+
     with open(news_file, "w") as f:
         json.dump(combined_news, f, indent=2)
 
-    return {"message": f"Successfully ingested {len(unique_new_articles)} new articles."} 
+    return {"message": f"Successfully ingested {len(unique_new_articles)} new articles."}
 
 if __name__ == "__main__":
     import uvicorn
