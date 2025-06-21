@@ -1,16 +1,18 @@
-import requests
+import os
 import uuid
 from datetime import datetime
-import os
 from pathlib import Path
+
+import requests
 from dotenv import load_dotenv
+
 
 def fetch_newsdata_news():
     """
     Fetches aviation news from the Newsdata.io API.
     """
     # Load environment variables from .env file
-    dotenv_path = Path(__file__).parent.parent / '.env'
+    dotenv_path = Path(__file__).parent.parent / ".env"
     load_dotenv(dotenv_path=dotenv_path)
 
     API_KEY = os.getenv("NEWSDATA_API_KEY")
@@ -27,7 +29,7 @@ def fetch_newsdata_news():
     except requests.exceptions.RequestException as e:
         print(f"Error fetching from Newsdata.io: {e}")
         return []
-    except ValueError: # Catches JSON decoding errors
+    except ValueError:  # Catches JSON decoding errors
         print("Error: Could not decode JSON response from Newsdata.io")
         return []
 
@@ -41,12 +43,14 @@ def fetch_newsdata_news():
                 "body": item.get("description", ""),
                 "link": item.get("link"),
                 "source": item.get("source_id", "Newsdata.io"),
-                "status": "new"
+                "status": "new",
             }
             # Ensure we have a title and a link before adding
             if article["title"] and article["link"]:
                 articles.append(article)
     else:
-        print(f"Newsdata.io API returned an error: {data.get('results', {}).get('message')}")
+        print(
+            f"Newsdata.io API returned an error: {data.get('results', {}).get('message')}"
+        )
 
     return articles

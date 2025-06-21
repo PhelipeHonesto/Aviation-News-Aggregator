@@ -1,16 +1,23 @@
-# osacurator
+# OsaCurator
 
-This repository contains a small FastAPI backend and a React frontend built with Vite. The backend provides two endpoints:
+This repository contains a full-stack application with:
 
-- `/news` – returns articles stored in `news.json`.
-- `/ingest` – fetches fresh articles from the agents and stores them in `news.json`.
+- 🧠 A **FastAPI backend** that handles news ingestion and retrieval
+- 🖥️ A **React frontend** (built with Vite) that displays the news and provides UI controls
 
-## Running the backend
+---
 
-1. Install Python dependencies from `backend/requirements.txt`.
-2. Start the app with `python backend/main.py` or run with Uvicorn.
+## 🛠️ Backend Endpoints
 
-## Running the frontend
+- `GET /news` – returns the articles stored in `backend/news.json`
+- `POST /ingest` – fetches fresh articles from the agents and appends them to `news.json`
 
-Change to the `frontend` directory and install dependencies with `npm install`. Start the development server using `npm run dev`.
+---
+
+## 🚀 Running the Project Locally
+
+### 1. Install Python dependencies
+
+```bash
+pip install -r backend/requirements.txt
 

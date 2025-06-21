@@ -1,8 +1,9 @@
-import requests
-from bs4 import BeautifulSoup
 import uuid
 from datetime import datetime
 from urllib.parse import urljoin
+
+import requests
+from bs4 import BeautifulSoup
 
 
 def fetch_skywest_news():
@@ -11,7 +12,7 @@ def fetch_skywest_news():
     """
     URL = "https://inc.skywest.com/news-and-events/press-releases/"
     try:
-        response = requests.get(URL, headers={'User-Agent': 'Mozilla/5.0'})
+        response = requests.get(URL, headers={"User-Agent": "Mozilla/5.0"})
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         print(f"Error fetching URL {URL}: {e}")
@@ -25,16 +26,16 @@ def fetch_skywest_news():
         # Select the 'a' tag directly to avoid intermediate access that confuses the linter
         link_element = item.select_one("h4 > a")
         date_element = item.find("div", class_="news-release-date")
-        
+
         if link_element and date_element:
             title = link_element.get_text(strip=True)
             relative_link = link_element.get("href")
             if not isinstance(relative_link, str):
                 continue
             link = urljoin(URL, relative_link)
-            
+
             body = ""
-            
+
             date_str = date_element.get_text(strip=True)
             try:
                 # Assuming format is MM/DD/YYYY
@@ -50,7 +51,7 @@ def fetch_skywest_news():
                 "body": body,
                 "link": link,
                 "source": "SkyWest, Inc.",
-                "status": "new"
+                "status": "new",
             }
             articles.append(article)
 
