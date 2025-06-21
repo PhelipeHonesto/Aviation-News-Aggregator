@@ -63,3 +63,7 @@ def ingest_news():
         json.dump(combined_news, f, indent=2)
 
     return {"message": f"Successfully ingested {len(unique_new_articles)} new articles."} 
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
