@@ -103,18 +103,6 @@ Alternatively, you can start both at once using the `start_dev.sh` script in the
 You can now open your web browser to the frontend URL to use the application.
 
 
-<<<<<8ny9dr-codex/improve-local-web-app-startup-efficiency
-### 4. Quick Start Script
-
-For convenience, a `start.sh` script is provided in the project root. This script starts both the FastAPI backend and the Vite frontend concurrently.
-
-```bash
-./start.sh
-```
-
-Make sure the Python virtual environment and npm dependencies are already installed. Press `Ctrl+C` to stop both servers.
-
-=======
 ### Quick Development Script
 
 To start both the backend and frontend at once, run the helper script from the project root:
@@ -124,4 +112,3 @@ To start both the backend and frontend at once, run the helper script from the p
 ```
 
 The script launches the FastAPI backend and Vite frontend concurrently. Press `Ctrl+C` to stop both servers.
->>>>> main
