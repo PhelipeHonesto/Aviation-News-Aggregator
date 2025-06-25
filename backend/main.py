@@ -166,6 +166,31 @@ def edit_story(article: Dict = Depends(get_article_dependency)):
             detail=f"An error occurred with the OpenAI API: {e}",
         )
 
+
+def format_slack_message(article: Dict[str, Any]) -> Dict[str, Any]:
+    """Return a Slack message payload for a given article."""
+    return {
+        "blocks": [
+            {
+                "type": "header",
+                "text": {"type": "plain_text", "text": f":newspaper: {article.get('title', 'No Title')}"},
+            },
+            {
+                "type": "section",
+                "text": {"type": "mrkdwn", "text": article.get("body", "No content available.")},
+            },
+            {
+                "type": "context",
+                "elements": [
+                    {
+                        "type": "mrkdwn",
+                        "text": f"Source: *{article.get('source', 'N/A')}* | <{article.get('link', '#')}|Read Original>",
+                    }
+                ],
+            },
+        ]
+    }
+
 @app.post("/slack/{story_id}", summary="Post Story to Slack", tags=["Curation"])
 def post_to_slack(article: Dict = Depends(get_article_dependency)):
     """
@@ -185,13 +210,7 @@ def post_to_slack(article: Dict = Depends(get_article_dependency)):
             detail="SLACK_WEBHOOK_URL is not configured on the server.",
         )
 
-    slack_payload = {
-        "blocks": [
-            {"type": "header", "text": {"type": "plain_text", "text": f":newspaper: {article.get('title', 'No Title')}"}},
-            {"type": "section", "text": {"type": "mrkdwn", "text": article.get('body', 'No content available.')}},
-            {"type": "context", "elements": [{"type": "mrkdwn", "text": f"Source: *{article.get('source', 'N/A')}* | <{article.get('link', '#')}|Read Original>"}]},
-        ]
-    }
+    slack_payload = format_slack_message(article)
     
     try:
         response = requests.post(slack_webhook_url, json=slack_payload)
