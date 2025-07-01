@@ -1,10 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
 from openai import OpenAI
 import requests
 from typing import List, Dict, Any
+import asyncio
 
 # Local imports
 import database
@@ -245,3 +246,15 @@ def post_to_slack(article: Dict = Depends(get_article_dependency)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to post to Slack: {e}",
         )
+
+# --- WebSocket Endpoint ---
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    try:
+        while True:
+            await websocket.send_json({"type": "ping", "data": "pong"})
+            await asyncio.sleep(10)
+    except WebSocketDisconnect:
+        print("WebSocket disconnected")
