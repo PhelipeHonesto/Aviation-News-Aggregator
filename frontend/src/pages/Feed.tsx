@@ -5,10 +5,15 @@ import ErrorToast from '../components/ErrorToast';
 import LoadingSpinner from '../components/LoadingSpinner';
 import PullToRefresh from '../components/PullToRefresh';
 import SearchAndFilter, { type FilterOptions } from '../components/SearchAndFilter';
+import InfiniteScroll from '../components/InfiniteScroll';
+import Pagination from '../components/Pagination';
+import LoadMoreButton from '../components/LoadMoreButton';
+import PaginationModeSelector from '../components/PaginationModeSelector';
+import { usePagination, type PaginationMode } from '../hooks/usePagination';
 import * as api from '../services/api';
 import { getErrorInfo } from '../utils/errorHandler';
 import { retry } from '../utils/retry';
-import { filterAndSortArticles, getUniqueSources } from '../utils/filterUtils';
+import { getUniqueSources } from '../utils/filterUtils';
 import type { Article } from '../types';
 import type { ErrorInfo } from '../utils/errorHandler';
 import './Feed.css';
@@ -28,6 +33,7 @@ const Feed = () => {
     sortBy: 'date',
     sortOrder: 'desc'
   });
+  const [paginationMode, setPaginationMode] = useState<PaginationMode>('infinite');
   
   // Toast notification state
   const [toast, setToast] = useState<{
@@ -128,18 +134,23 @@ const Feed = () => {
     handleRetry(handleIngestNews);
   };
 
-  // Filter and sort articles
-  const filteredArticles = useMemo(() => {
-    return filterAndSortArticles(articles, filters);
-  }, [articles, filters]);
-
   // Get unique sources for filter options
   const availableSources = useMemo(() => {
     return getUniqueSources(articles);
   }, [articles]);
 
+  // Pagination system
+  const pagination = usePagination(articles, filters, {
+    mode: paginationMode,
+    itemsPerPage: 20
+  });
+
   const handleFilterChange = (newFilters: FilterOptions) => {
     setFilters(newFilters);
+  };
+
+  const handlePaginationModeChange = (mode: PaginationMode) => {
+    setPaginationMode(mode);
   };
 
   /**
@@ -212,12 +223,19 @@ const Feed = () => {
         </button>
       </div>
 
+      {/* Pagination Mode Selector */}
+      <PaginationModeSelector
+        currentMode={paginationMode}
+        onModeChange={handlePaginationModeChange}
+        totalItems={pagination.totalItems}
+      />
+
       {/* Search and Filter Component */}
       <SearchAndFilter
         onFilterChange={handleFilterChange}
         availableSources={availableSources}
         totalArticles={articles.length}
-        filteredCount={filteredArticles.length}
+        filteredCount={pagination.totalItems}
       />
       
       {/* Display a loading message or the list of articles */}
@@ -228,24 +246,82 @@ const Feed = () => {
         </div>
       ) : (
         <PullToRefresh onRefresh={loadNews}>
-          <div className="articles-container">
-            {filteredArticles.length > 0 ? (
-              filteredArticles.map(article => (
-                <ArticleCard 
-                  key={article.id} 
-                  article={article} 
-                  onAction={handleAction}
-                  isLoading={isLoading(article.id)}
-                />
-              ))
-            ) : articles.length > 0 ? (
-              <div className="no-results">
-                <div className="no-results-icon">🔍</div>
-                <h3>No articles found</h3>
-                <p>Try adjusting your search criteria or filters</p>
-              </div>
-            ) : null}
-          </div>
+          {/* Render articles based on pagination mode */}
+          {pagination.currentItems.length > 0 ? (
+            <>
+              {/* Infinite Scroll Mode */}
+              {paginationMode === 'infinite' && (
+                <InfiniteScroll
+                  onLoadMore={pagination.loadMore}
+                  hasMore={pagination.hasMore}
+                  isLoading={pagination.isLoading}
+                >
+                  <div className="articles-container">
+                    {pagination.currentItems.map((article: Article) => (
+                      <ArticleCard 
+                        key={article.id} 
+                        article={article} 
+                        onAction={handleAction}
+                        isLoading={isLoading(article.id)}
+                      />
+                    ))}
+                  </div>
+                </InfiniteScroll>
+              )}
+
+              {/* Traditional Pagination Mode */}
+              {paginationMode === 'pagination' && (
+                <>
+                  <div className="articles-container">
+                    {pagination.currentItems.map((article: Article) => (
+                      <ArticleCard 
+                        key={article.id} 
+                        article={article} 
+                        onAction={handleAction}
+                        isLoading={isLoading(article.id)}
+                      />
+                    ))}
+                  </div>
+                  <Pagination
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    onPageChange={pagination.goToPage}
+                    totalItems={pagination.totalItems}
+                    itemsPerPage={pagination.itemsPerPage}
+                  />
+                </>
+              )}
+
+              {/* Load More Mode */}
+              {paginationMode === 'load-more' && (
+                <>
+                  <div className="articles-container">
+                    {pagination.currentItems.map((article: Article) => (
+                      <ArticleCard 
+                        key={article.id} 
+                        article={article} 
+                        onAction={handleAction}
+                        isLoading={isLoading(article.id)}
+                      />
+                    ))}
+                  </div>
+                  <LoadMoreButton
+                    onLoadMore={pagination.loadMore}
+                    hasMore={pagination.hasMore}
+                    isLoading={pagination.isLoading}
+                    totalLoaded={pagination.currentItems.length}
+                    totalAvailable={pagination.totalItems}
+                  />
+                </>
+              )}
+            </>
+          ) : articles.length > 0 ? (
+            <div className="no-results">
+              <div className="no-results-icon">🔍</div>
+              <h3>No articles found</h3>
+              <p>Try adjusting your search criteria or filters</p>
+            </div>
+          ) : null}
         </PullToRefresh>
       )}
 

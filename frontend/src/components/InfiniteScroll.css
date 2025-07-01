@@ -1,0 +1,81 @@
+.infinite-scroll-container {
+  position: relative;
+}
+
+.infinite-scroll-observer {
+  position: relative;
+  z-index: 1;
+}
+
+/* Loading indicator */
+.infinite-scroll-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #b8c5d6;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.9rem;
+  gap: 1rem;
+}
+
+.infinite-scroll-loading .loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid #0e2a52;
+  border-top: 3px solid #f17500;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.infinite-scroll-loading span {
+  text-align: center;
+}
+
+/* End of content indicator */
+.infinite-scroll-end {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  color: #6c757d;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 1rem;
+  text-align: center;
+  border-top: 1px solid #0e2a52;
+  margin-top: 2rem;
+}
+
+.infinite-scroll-end span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .infinite-scroll-loading {
+    padding: 1.5rem;
+    font-size: 0.85rem;
+  }
+  
+  .infinite-scroll-loading .loading-spinner {
+    width: 28px;
+    height: 28px;
+    border-width: 2px;
+  }
+  
+  .infinite-scroll-end {
+    padding: 2rem 1rem;
+    font-size: 0.9rem;
+    margin-top: 1rem;
+  }
+} 
