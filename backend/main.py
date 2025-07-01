@@ -11,18 +11,19 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 import requests
-from typing import List, Dict, Any
+from typing import List, Any
 import asyncio
 
 # Local imports
-import database
-from agents.aviation_pages_reader import fetch_skywest_news
-from agents.newsdata_agent import fetch_newsdata_news
+from . import database
+from .database import Article
+from .agents.aviation_pages_reader import fetch_skywest_news
+from .agents.newsdata_agent import fetch_newsdata_news
 
 # --- Application Setup ---
 
 # Load environment variables from a .env file at the project root
-load_dotenv(dotenv_path=database.DB_FILE.parent / ".env")
+load_dotenv(dotenv_path=database.DB_PATH.replace('news.db', '.env'))
 
 app = FastAPI(
     title="OsaCurator API",
@@ -42,8 +43,7 @@ app.add_middleware(
 
 # --- Dependencies ---
 
-
-def get_article_dependency(story_id: str) -> Dict[str, Any]:
+def get_article_dependency(story_id: str) -> Article:
     """
     FastAPI dependency to fetch a single article by its ID.
     Raises a 404 HTTPException if the article is not found.
@@ -56,24 +56,20 @@ def get_article_dependency(story_id: str) -> Dict[str, Any]:
         )
     return article
 
-
 # --- API Endpoints ---
-
 
 @app.get("/", summary="Root Endpoint", tags=["Health"])
 def read_root():
     """A simple health check endpoint to confirm the API is running."""
     return {"status": "ok", "message": "Welcome to OsaCurator API"}
 
-
-@app.get("/news", summary="Get All News", response_model=List[Dict], tags=["News"])
+@app.get("/news", summary="Get All News", response_model=List[Article], tags=["News"])
 def get_news():
     """
     Returns a list of all news articles, sorted by date in descending order.
     """
     news = database.get_all_news()
-    return sorted(news, key=lambda x: x.get("date", ""), reverse=True)
-
+    return sorted(news, key=lambda x: x.date or "", reverse=True)
 
 @app.post("/ingest", summary="Ingest New Articles", tags=["News"])
 def ingest_news():
@@ -103,19 +99,20 @@ def ingest_news():
         print(f"Error fetching news from Newsdata.io: {e}")
 
     existing_news = database.get_all_news()
-    existing_links = {article["link"] for article in existing_news if "link" in article}
+    existing_links = {article.link for article in existing_news if article.link}
 
     unique_new_articles = [
-        article
-        for article in all_new_articles
+        article for article in all_new_articles
         if article.get("link") and article["link"] not in existing_links
     ]
 
     print(f"Found {len(unique_new_articles)} new unique articles.")
 
     if unique_new_articles:
-        combined_news = unique_new_articles + existing_news
-        database.save_all_news(combined_news)
+        # Convert dicts to Article objects for saving
+        combined_news = [Article(**a) if not isinstance(a, Article) else a for a in (unique_new_articles + [a.dict() if not isinstance(a, dict) else a for a in existing_news])]
+        # Save as dicts for compatibility with save_all_news
+        database.save_all_news([a.dict() if isinstance(a, Article) else a for a in combined_news])
         print(f"Saved {len(unique_new_articles)} new articles to the database.")
     else:
         print("No new articles to save.")
@@ -124,26 +121,23 @@ def ingest_news():
         "message": f"Successfully ingested {len(unique_new_articles)} new articles."
     }
 
-
 @app.post("/select/{story_id}", summary="Select a Story", tags=["Curation"])
-def select_story(article: Dict = Depends(get_article_dependency)):
+def select_story(article: Article = Depends(get_article_dependency)):
     """Marks an article's status as 'selected'."""
-    all_news = database.get_all_news()
-    for item in all_news:
-        if item.get("id") == article.get("id"):
-            item["status"] = "selected"
-            break
-    database.save_all_news(all_news)
-    return {"message": f"Story {article.get('id')} has been selected."}
-
+    article.status = "selected"
+    # Save update
+    with database.Session(database.engine) as session:
+        session.add(article)
+        session.commit()
+    return {"message": f"Story {article.id} has been selected."}
 
 @app.post("/edit/{story_id}", summary="Rewrite a Story with AI", tags=["Curation"])
-def edit_story(article: Dict = Depends(get_article_dependency)):
+def edit_story(article: Article = Depends(get_article_dependency)):
     """
     Sends a selected or previously edited article to the OpenAI API for rewriting.
     The article's body is updated with the AI-generated text and its status is set to 'edited'.
     """
-    if article.get("status") not in ["selected", "edited"]:
+    if article.status not in ["selected", "edited"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Article must be 'selected' or 'edited' before sending to AI.",
@@ -162,7 +156,7 @@ def edit_story(article: Dict = Depends(get_article_dependency)):
     http_client = httpx.Client(timeout=httpx.Timeout(30.0), follow_redirects=True)
 
     client = OpenAI(api_key=openai_api_key, http_client=http_client)
-    prompt = f"Rewrite the following news article for a general audience. Keep it concise, informative, and engaging. \n\nTitle: {article.get('title')}\n\nArticle: {article.get('body')}"
+    prompt = f"Rewrite the following news article for a general audience. Keep it concise, informative, and engaging. \n\nTitle: {article.title}\n\nArticle: {article.body}"
 
     try:
         response = client.chat.completions.create(
@@ -176,15 +170,13 @@ def edit_story(article: Dict = Depends(get_article_dependency)):
                 status_code=500, detail="AI failed to generate content."
             )
 
-        all_news = database.get_all_news()
-        for item in all_news:
-            if item.get("id") == article.get("id"):
-                item["body"] = edited_body
-                item["status"] = "edited"
-                break
-        database.save_all_news(all_news)
+        article.body = edited_body
+        article.status = "edited"
+        with database.Session(database.engine) as session:
+            session.add(article)
+            session.commit()
 
-        return {"message": f"Story {article.get('id')} has been edited by AI."}
+        return {"message": f"Story {article.id} has been edited by AI."}
 
     except Exception as e:
         raise HTTPException(
@@ -192,8 +184,7 @@ def edit_story(article: Dict = Depends(get_article_dependency)):
             detail=f"An error occurred with the OpenAI API: {e}",
         )
 
-
-def format_slack_message(article: Dict[str, Any]) -> Dict[str, Any]:
+def format_slack_message(article: Article) -> dict:
     """Return a Slack message payload for a given article."""
     return {
         "blocks": [
@@ -201,14 +192,14 @@ def format_slack_message(article: Dict[str, Any]) -> Dict[str, Any]:
                 "type": "header",
                 "text": {
                     "type": "plain_text",
-                    "text": f":newspaper: {article.get('title', 'No Title')}",
+                    "text": f":newspaper: {article.title or 'No Title'}",
                 },
             },
             {
                 "type": "section",
                 "text": {
                     "type": "mrkdwn",
-                    "text": article.get("body", "No content available."),
+                    "text": article.body or "No content available.",
                 },
             },
             {
@@ -216,21 +207,20 @@ def format_slack_message(article: Dict[str, Any]) -> Dict[str, Any]:
                 "elements": [
                     {
                         "type": "mrkdwn",
-                        "text": f"Source: *{article.get('source', 'N/A')}* | <{article.get('link', '#')}|Read Original>",
+                        "text": f"Source: *{article.source or 'N/A'}* | <{article.link or '#'}|Read Original>",
                     }
                 ],
             },
         ]
     }
 
-
 @app.post("/slack/{story_id}", summary="Post Story to Slack", tags=["Curation"])
-def post_to_slack(article: Dict = Depends(get_article_dependency)):
+def post_to_slack(article: Article = Depends(get_article_dependency)):
     """
     Formats and sends an edited article to a Slack channel via a webhook.
     The article's status is updated to 'posted'.
     """
-    if article.get("status") != "edited":
+    if article.status != "edited":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Article must be 'edited' before posting to Slack.",
@@ -239,14 +229,12 @@ def post_to_slack(article: Dict = Depends(get_article_dependency)):
     slack_webhook_url = os.getenv("SLACK_WEBHOOK_URL")
     if not slack_webhook_url:
         # Instead of failing, just update the status and return success
-        all_news = database.get_all_news()
-        for item in all_news:
-            if item.get("id") == article.get("id"):
-                item["status"] = "posted"
-                break
-        database.save_all_news(all_news)
+        article.status = "posted"
+        with database.Session(database.engine) as session:
+            session.add(article)
+            session.commit()
         return {
-            "message": f"Story {article.get('id')} has been marked as posted (Slack webhook not configured)."
+            "message": f"Story {article.id} has been marked as posted (Slack webhook not configured)."
         }
 
     slack_payload = format_slack_message(article)
@@ -254,25 +242,18 @@ def post_to_slack(article: Dict = Depends(get_article_dependency)):
     try:
         response = requests.post(slack_webhook_url, json=slack_payload)
         response.raise_for_status()  # Raise an exception for bad status codes
-
-        all_news = database.get_all_news()
-        for item in all_news:
-            if item.get("id") == article.get("id"):
-                item["status"] = "posted"
-                break
-        database.save_all_news(all_news)
-
-        return {"message": f"Story {article.get('id')} has been posted to Slack."}
-
-    except requests.exceptions.RequestException as e:
+        article.status = "posted"
+        with database.Session(database.engine) as session:
+            session.add(article)
+            session.commit()
+        return {"message": f"Story {article.id} has been posted to Slack."}
+    except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to post to Slack: {e}",
+            detail=f"An error occurred posting to Slack: {e}",
         )
 
-
 # --- WebSocket Endpoint ---
-
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
