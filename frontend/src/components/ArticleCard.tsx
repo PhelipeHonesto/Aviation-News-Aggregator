@@ -1,4 +1,5 @@
 import type { Article } from '../types';
+import LoadingSpinner from './LoadingSpinner';
 
 type ActionType = 'select' | 'edit' | 'post';
 
@@ -69,18 +70,33 @@ const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
                         {article.status === 'new' && (
                             <button 
                                 onClick={() => onAction('select', article.id)}
-                                className="action-btn select-btn"
+                                disabled={isLoading}
+                                className={`action-btn select-btn ${isLoading ? 'loading' : ''}`}
                             >
-                                Select Story
+                                {isLoading ? (
+                                    <>
+                                        <LoadingSpinner size="small" color="white" />
+                                        <span style={{ marginLeft: '8px' }}>Selecting...</span>
+                                    </>
+                                ) : (
+                                    'Select Story'
+                                )}
                             </button>
                         )}
                         {article.status === 'selected' && (
                             <button 
                                 onClick={() => onAction('edit', article.id)} 
                                 disabled={isLoading}
-                                className="action-btn edit-btn"
+                                className={`action-btn edit-btn ${isLoading ? 'loading' : ''}`}
                             >
-                                {isLoading ? 'Editing...' : 'Edit with AI'}
+                                {isLoading ? (
+                                    <>
+                                        <LoadingSpinner size="small" color="white" />
+                                        <span style={{ marginLeft: '8px' }}>Editing...</span>
+                                    </>
+                                ) : (
+                                    'Edit with AI'
+                                )}
                             </button>
                         )}
                         {article.status === 'edited' && (
@@ -88,16 +104,30 @@ const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
                                 <button 
                                     onClick={() => onAction('edit', article.id)} 
                                     disabled={isLoading}
-                                    className="action-btn reedit-btn"
+                                    className={`action-btn reedit-btn ${isLoading ? 'loading' : ''}`}
                                 >
-                                    {isLoading ? 'Editing...' : 'Re-edit'}
+                                    {isLoading ? (
+                                        <>
+                                            <LoadingSpinner size="small" color="white" />
+                                            <span style={{ marginLeft: '8px' }}>Editing...</span>
+                                        </>
+                                    ) : (
+                                        'Re-edit'
+                                    )}
                                 </button>
                                 <button 
                                     onClick={() => onAction('post', article.id)} 
                                     disabled={isLoading}
-                                    className="action-btn post-btn"
+                                    className={`action-btn post-btn ${isLoading ? 'loading' : ''}`}
                                 >
-                                    {isLoading ? 'Posting...' : 'Post to Slack'}
+                                    {isLoading ? (
+                                        <>
+                                            <LoadingSpinner size="small" color="white" />
+                                            <span style={{ marginLeft: '8px' }}>Posting...</span>
+                                        </>
+                                    ) : (
+                                        'Post to Slack'
+                                    )}
                                 </button>
                             </>
                         )}
@@ -105,9 +135,16 @@ const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
                             <button 
                                 onClick={() => onAction('select', article.id)} 
                                 disabled={isLoading}
-                                className="action-btn rewrite-btn"
+                                className={`action-btn rewrite-btn ${isLoading ? 'loading' : ''}`}
                             >
-                                Rewrite Story
+                                {isLoading ? (
+                                    <>
+                                        <LoadingSpinner size="small" color="white" />
+                                        <span style={{ marginLeft: '8px' }}>Rewriting...</span>
+                                    </>
+                                ) : (
+                                    'Rewrite Story'
+                                )}
                             </button>
                         )}
                     </div>

@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import ArticleCard from '../components/ArticleCard';
+import Toast from '../components/Toast';
+import LoadingSpinner from '../components/LoadingSpinner';
 import * as api from '../services/api';
 import type { Article } from '../types';
 import './Feed.css';
@@ -7,27 +9,40 @@ import './Feed.css';
 const Feed = () => {
   // Component State
   const [articles, setArticles] = useState<Article[]>([]);
-  const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-  
-  // Tracks the ID of the article currently being processed by an action,
-  // or a general status like 'loading_feed' or 'ingesting'.
   const [actingArticleId, setActingArticleId] = useState<string | null>(null);
+  
+  // Toast notification state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+    isVisible: boolean;
+  }>({
+    message: '',
+    type: 'info',
+    isVisible: false
+  });
 
   /**
    * Fetches all news from the API and updates the component's state.
    * This function is memoized with useCallback to prevent re-creation on every render.
    */
+  const showToast = (message: string, type: 'success' | 'error' | 'info') => {
+    setToast({ message, type, isVisible: true });
+  };
+
+  const hideToast = () => {
+    setToast(prev => ({ ...prev, isVisible: false }));
+  };
+
   const loadNews = useCallback(() => {
     setActingArticleId('loading_feed');
-    setError(null);
     api.getNews()
       .then(setArticles)
       .catch((err) => {
         if (err instanceof Error && err.message.includes('Failed to fetch')) {
-          setError('Could not connect to the backend. Please ensure the server is running and try again.');
+          showToast('Could not connect to the backend. Please ensure the server is running and try again.', 'error');
         } else {
-          setError('Could not load news. Please try again later.');
+          showToast('Could not load news. Please try again later.', 'error');
         }
       })
       .finally(() => setActingArticleId(null));
@@ -44,22 +59,20 @@ const Feed = () => {
    */
   const handleIngestNews = async () => {
     setActingArticleId('ingesting');
-    setMessage('Ingesting new articles...');
-    setError(null);
+    showToast('Ingesting new articles...', 'info');
     try {
       const response = await api.ingestNews();
-      setMessage(response.message);
+      showToast(response.message, 'success');
       loadNews(); // Refresh the feed
     } catch (err: any) {
       const errorMessage = err.message || 'An unknown error occurred during ingestion.';
       if (errorMessage.includes('Failed to fetch')) {
-        setError('Could not connect to the backend. Please ensure the server is running and try again.');
+        showToast('Could not connect to the backend. Please ensure the server is running and try again.', 'error');
       } else {
-      setError(errorMessage);
+        showToast(errorMessage, 'error');
       }
     } finally {
       setActingArticleId(null);
-      setTimeout(() => setMessage(null), 5000);
     }
   };
 
@@ -70,8 +83,6 @@ const Feed = () => {
    */
   const handleAction = async (action: 'select' | 'edit' | 'post', storyId: string) => {
     setActingArticleId(storyId);
-    setMessage(null);
-    setError(null);
 
     // Maps action types to their respective API calls and UI messages.
     const actionMap = {
@@ -82,26 +93,22 @@ const Feed = () => {
 
     try {
       const currentAction = actionMap[action];
-      setMessage(currentAction.loadingMessage);
+      showToast(currentAction.loadingMessage, 'info');
       
       const response = await currentAction.apiCall(storyId);
-      setMessage(response.message);
+      showToast(response.message, 'success');
 
       // After a successful action, reload all news to reflect the change.
-      // This is a simple but less efficient approach. A future optimization
-      // would be to have the API return the updated article and update it in the local state.
       loadNews();
     } catch (err: any) {
       const errorMessage = err.message || `An unknown error occurred while performing action: ${action}.`;
-       if (errorMessage.includes('Failed to fetch')) {
-        setError('Could not connect to the backend. Please ensure the server is running and try again.');
+      if (errorMessage.includes('Failed to fetch')) {
+        showToast('Could not connect to the backend. Please ensure the server is running and try again.', 'error');
       } else {
-      setError(errorMessage);
+        showToast(errorMessage, 'error');
       }
     } finally {
       setActingArticleId(null);
-      // Clear the message after a few seconds
-      setTimeout(() => setMessage(null), 5000);
     }
   };
 
@@ -125,17 +132,28 @@ const Feed = () => {
       <div className="feed-header">
         <h1>News Feed</h1>
         <button onClick={handleIngestNews} disabled={isLoading()}>
-          {isLoading('ingesting') ? 'Ingesting...' : (isLoading('loading_feed') ? 'Loading...' : 'Update News')}
+          {isLoading('ingesting') ? (
+            <>
+              <LoadingSpinner size="small" color="white" />
+              <span style={{ marginLeft: '8px' }}>Ingesting...</span>
+            </>
+          ) : isLoading('loading_feed') ? (
+            <>
+              <LoadingSpinner size="small" color="white" />
+              <span style={{ marginLeft: '8px' }}>Loading...</span>
+            </>
+          ) : (
+            'Update News'
+          )}
         </button>
       </div>
-
-      {/* Display error or success messages */}
-      {error && <p className="message error">{error}</p>}
-      {message && <p className="message success">{message}</p>}
       
       {/* Display a loading message or the list of articles */}
       {isLoading('loading_feed') && articles.length === 0 ? (
-        <p>Loading news feed...</p>
+        <div className="loading-container">
+          <LoadingSpinner size="large" />
+          <p>Loading news feed...</p>
+        </div>
       ) : (
         <div className="articles-container">
           {articles.map(article => (
@@ -148,6 +166,14 @@ const Feed = () => {
           ))}
         </div>
       )}
+
+      {/* Toast notifications */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        isVisible={toast.isVisible}
+        onClose={hideToast}
+      />
     </div>
   );
 };
