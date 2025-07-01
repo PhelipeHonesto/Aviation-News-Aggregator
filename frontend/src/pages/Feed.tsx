@@ -1,9 +1,13 @@
 import { useEffect, useState, useCallback } from 'react';
 import ArticleCard from '../components/ArticleCard';
 import Toast from '../components/Toast';
+import ErrorToast from '../components/ErrorToast';
 import LoadingSpinner from '../components/LoadingSpinner';
 import * as api from '../services/api';
+import { getErrorInfo } from '../utils/errorHandler';
+import { retry } from '../utils/retry';
 import type { Article } from '../types';
+import type { ErrorInfo } from '../utils/errorHandler';
 import './Feed.css';
 
 const Feed = () => {
@@ -22,6 +26,19 @@ const Feed = () => {
     isVisible: false
   });
 
+  // Error handling state
+  const [errorToast, setErrorToast] = useState<{
+    errorInfo: ErrorInfo;
+    isVisible: boolean;
+  }>({
+    errorInfo: {
+      message: '',
+      suggestion: '',
+      retryable: false
+    },
+    isVisible: false
+  });
+
   /**
    * Fetches all news from the API and updates the component's state.
    * This function is memoized with useCallback to prevent re-creation on every render.
@@ -34,19 +51,38 @@ const Feed = () => {
     setToast(prev => ({ ...prev, isVisible: false }));
   };
 
-  const loadNews = useCallback(() => {
+  const showErrorToast = (error: any, context: string) => {
+    const errorInfo = getErrorInfo(error, context);
+    setErrorToast({ errorInfo, isVisible: true });
+  };
+
+  const hideErrorToast = () => {
+    setErrorToast(prev => ({ ...prev, isVisible: false }));
+  };
+
+  const handleRetry = (retryFn: () => Promise<void>) => {
+    hideErrorToast();
+    retryFn();
+  };
+
+  const loadNews = useCallback(async () => {
     setActingArticleId('loading_feed');
-    api.getNews()
-      .then(setArticles)
-      .catch((err) => {
-        if (err instanceof Error && err.message.includes('Failed to fetch')) {
-          showToast('Could not connect to the backend. Please ensure the server is running and try again.', 'error');
-        } else {
-          showToast('Could not load news. Please try again later.', 'error');
-        }
-      })
-      .finally(() => setActingArticleId(null));
+    try {
+      const articles = await retry(() => api.getNews(), {
+        maxAttempts: 3,
+        baseDelay: 1000
+      });
+      setArticles(articles);
+    } catch (err) {
+      showErrorToast(err, 'loading news');
+    } finally {
+      setActingArticleId(null);
+    }
   }, []);
+
+  const retryLoadNews = () => {
+    handleRetry(loadNews);
+  };
 
   // Load news once when the component mounts.
   useEffect(() => {
@@ -61,19 +97,21 @@ const Feed = () => {
     setActingArticleId('ingesting');
     showToast('Ingesting new articles...', 'info');
     try {
-      const response = await api.ingestNews();
+      const response = await retry(() => api.ingestNews(), {
+        maxAttempts: 2,
+        baseDelay: 2000
+      });
       showToast(response.message, 'success');
       loadNews(); // Refresh the feed
     } catch (err: any) {
-      const errorMessage = err.message || 'An unknown error occurred during ingestion.';
-      if (errorMessage.includes('Failed to fetch')) {
-        showToast('Could not connect to the backend. Please ensure the server is running and try again.', 'error');
-      } else {
-        showToast(errorMessage, 'error');
-      }
+      showErrorToast(err, 'ingesting news');
     } finally {
       setActingArticleId(null);
     }
+  };
+
+  const retryIngestNews = () => {
+    handleRetry(handleIngestNews);
   };
 
   /**
@@ -95,18 +133,16 @@ const Feed = () => {
       const currentAction = actionMap[action];
       showToast(currentAction.loadingMessage, 'info');
       
-      const response = await currentAction.apiCall(storyId);
+      const response = await retry(() => currentAction.apiCall(storyId), {
+        maxAttempts: 2,
+        baseDelay: 1500
+      });
       showToast(response.message, 'success');
 
       // After a successful action, reload all news to reflect the change.
       loadNews();
     } catch (err: any) {
-      const errorMessage = err.message || `An unknown error occurred while performing action: ${action}.`;
-      if (errorMessage.includes('Failed to fetch')) {
-        showToast('Could not connect to the backend. Please ensure the server is running and try again.', 'error');
-      } else {
-        showToast(errorMessage, 'error');
-      }
+      showErrorToast(err, `performing ${action} action`);
     } finally {
       setActingArticleId(null);
     }
@@ -173,6 +209,18 @@ const Feed = () => {
         type={toast.type}
         isVisible={toast.isVisible}
         onClose={hideToast}
+      />
+
+      {/* Error toast with retry functionality */}
+      <ErrorToast
+        errorInfo={errorToast.errorInfo}
+        isVisible={errorToast.isVisible}
+        onClose={hideErrorToast}
+        onRetry={
+          errorToast.errorInfo.retryable 
+            ? (errorToast.errorInfo.message.includes('loading news') ? retryLoadNews : retryIngestNews)
+            : undefined
+        }
       />
     </div>
   );
