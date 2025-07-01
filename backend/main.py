@@ -137,15 +137,26 @@ def edit_story(article: Dict = Depends(get_article_dependency)):
             detail="OPENAI_API_KEY is not configured on the server.",
         )
 
-    client = OpenAI(api_key=openai_api_key)
+    import httpx
+    
+    # Create a custom httpx client without any proxy configuration
+    http_client = httpx.Client(
+        timeout=httpx.Timeout(30.0),
+        follow_redirects=True
+    )
+    
+    client = OpenAI(
+        api_key=openai_api_key,
+        http_client=http_client
+    )
     prompt = f"Rewrite the following news article for a general audience. Keep it concise, informative, and engaging. \n\nTitle: {article.get('title')}\n\nArticle: {article.get('body')}"
     
     try:
-        chat_completion = client.chat.completions.create(
-            messages=[{"role": "user", "content": prompt}],
+        response = client.chat.completions.create(
             model="gpt-4o",
+            messages=[{"role": "user", "content": prompt}],
         )
-        edited_body = chat_completion.choices[0].message.content
+        edited_body = response.choices[0].message.content
         
         if not edited_body:
             raise HTTPException(status_code=500, detail="AI failed to generate content.")
