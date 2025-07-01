@@ -31,6 +31,12 @@ app = FastAPI(
     version="1.0.0",
 )
 
+
+@app.on_event("startup")
+def on_startup() -> None:
+    """Initialize the database on application startup."""
+    database.init_db()
+
 # CORS (Cross-Origin Resource Sharing) middleware allows the frontend
 # (running on a different origin) to communicate with this API.
 app.add_middleware(
