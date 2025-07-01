@@ -12,5 +12,5 @@ class ArticleSchema(BaseModel):
     link: str
     status: Optional[str] = None
 
-    class Config:
-        orm_mode = True 
+class Config:
+    from_attributes = True

@@ -74,11 +74,9 @@ const Feed = () => {
   const loadNews = useCallback(async () => {
     setActingArticleId('loading_feed');
     try {
-      const articles = await retry(() => api.getNews(), {
-        maxAttempts: 3,
-        baseDelay: 1000
-      });
-      setArticles(articles);
+      const response = await fetch("http://localhost:8000/news");
+      const data = await response.json();
+      setArticles(data.results || []);
     } catch (err) {
       showErrorToast(err, 'loading news');
     } finally {

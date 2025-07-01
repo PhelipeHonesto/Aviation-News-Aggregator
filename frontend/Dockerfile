@@ -10,4 +10,4 @@ WORKDIR /app
 RUN npm install -g serve
 COPY --from=build /app/dist ./dist
 EXPOSE 5173
-CMD ["serve", "-s", "dist", "-l", "5173"] 
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]

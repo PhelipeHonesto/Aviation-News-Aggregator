@@ -1,10 +1,4 @@
 fastapi
 uvicorn
 requests
-beautifulsoup4
-lxml
 python-dotenv
-openai
-sqlmodel
-sqlalchemy
-apscheduler
