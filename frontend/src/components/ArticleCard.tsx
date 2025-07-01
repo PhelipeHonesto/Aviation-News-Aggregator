@@ -1,4 +1,5 @@
 import type { Article } from '../types';
+import ReactMarkdown from 'react-markdown';
 import LoadingSpinner from './LoadingSpinner';
 import SwipeableCard from './SwipeableCard';
 
@@ -14,22 +15,30 @@ const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
     const getStatusTag = (status: string) => {
         switch (status) {
             case 'selected':
-                return { text: 'SELECTED', color: '#f17500' };
+                return { text: '🟡 SELECTED', color: '#f17500' };
             case 'edited':
-                return { text: 'EDITED', color: '#0a4bb6' };
+                return { text: '🟢 EDITED', color: '#0a4bb6' };
             case 'posted':
-                return { text: 'POSTED', color: '#28a745' };
+                return { text: '🔵 POSTED', color: '#28a745' };
+            case 'skipped':
+                return { text: '🔴 SKIPPED', color: '#d32f2f' };
+            case 'draft':
+                return { text: '🟡 DRAFT', color: '#fbc02d' };
+            case 'ready':
+                return { text: '🟢 READY', color: '#388e3c' };
             default:
                 return { text: 'NEW', color: '#6c757d' };
         }
     };
 
-    const statusTag = getStatusTag(article.status);
-    const formattedDate = new Date(article.date).toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
-    });
+    const statusTag = getStatusTag(article.status || '');
+    const formattedDate = article.published_at
+        ? new Date(article.published_at).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        })
+        : '';
 
     // Determine swipe actions based on article status
     const getSwipeActions = () => {
@@ -109,12 +118,12 @@ const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
                 {/* Middle Section */}
                 <div className="card-middle">
                     <h2 className="article-title">{article.title}</h2>
-                    <p className="article-summary">
-                        {article.body
-                            ? (article.body.length > 200 ? `${article.body.substring(0, 200)}...` : article.body)
-                            : 'No summary available.'
-                        }
-                    </p>
+                    {/* Markdown Preview */}
+                    <div className="markdown-preview">
+                        <ReactMarkdown>
+                            {article.body || ''}
+                        </ReactMarkdown>
+                    </div>
                 </div>
 
                 {/* Bottom Section */}
@@ -130,6 +139,23 @@ const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
                         </a>
                         
                         <div className="action-buttons">
+                            {/* AI Suggestion Button */}
+                            {(article.status === 'selected' || article.status === 'edited') && (
+                                <button
+                                    onClick={() => onAction('edit', article.id)}
+                                    disabled={isLoading}
+                                    className={`action-btn ai-btn ${isLoading ? 'loading' : ''}`}
+                                >
+                                    {isLoading ? (
+                                        <>
+                                            <LoadingSpinner size="small" color="white" />
+                                            <span style={{ marginLeft: '8px' }}>AI Rewriting...</span>
+                                        </>
+                                    ) : (
+                                        'Rewrite in Loud Hawk voice'
+                                    )}
+                                </button>
+                            )}
                             {article.status === 'new' && (
                                 <button 
                                     onClick={() => onAction('select', article.id)}

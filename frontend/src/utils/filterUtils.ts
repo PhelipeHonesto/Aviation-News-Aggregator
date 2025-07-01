@@ -27,7 +27,7 @@ export function filterAndSortArticles(
   // Apply status filter
   if (filters.status.length > 0) {
     filteredArticles = filteredArticles.filter(article =>
-      filters.status.includes(article.status)
+      filters.status.includes(article.status ?? '')
     );
   }
 
@@ -41,15 +41,15 @@ export function filterAndSortArticles(
   // Apply date range filter
   if (filters.dateRange.start || filters.dateRange.end) {
     filteredArticles = filteredArticles.filter(article => {
-      const articleDate = new Date(article.date);
+      const articleDate = new Date((article.published_at || '') as string);
       
       if (filters.dateRange.start) {
-        const startDate = new Date(filters.dateRange.start);
+        const startDate = new Date((filters.dateRange.start || '') as string);
         if (articleDate < startDate) return false;
       }
       
       if (filters.dateRange.end) {
-        const endDate = new Date(filters.dateRange.end);
+        const endDate = new Date((filters.dateRange.end || '') as string);
         endDate.setHours(23, 59, 59, 999); // Include the entire end day
         if (articleDate > endDate) return false;
       }
@@ -64,7 +64,7 @@ export function filterAndSortArticles(
     
     switch (filters.sortBy) {
       case 'date':
-        comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+        comparison = new Date(a.published_at || '').getTime() - new Date(b.published_at || '').getTime();
         break;
       case 'title':
         comparison = a.title.localeCompare(b.title);
@@ -95,7 +95,7 @@ export function getUniqueSources(articles: Article[]): string[] {
  */
 export function getStatusDistribution(articles: Article[]): Record<string, number> {
   return articles.reduce((acc, article) => {
-    acc[article.status] = (acc[article.status] || 0) + 1;
+    acc[article.status || 'unknown'] = (acc[article.status || 'unknown'] || 0) + 1;
     return acc;
   }, {} as Record<string, number>);
 }
@@ -122,7 +122,7 @@ export function articleMatchesFilters(
   }
 
   // Status filter
-  if (filters.status.length > 0 && !filters.status.includes(article.status)) {
+  if (filters.status.length > 0 && !filters.status.includes(article.status ?? '')) {
     return false;
   }
 
@@ -133,15 +133,15 @@ export function articleMatchesFilters(
 
   // Date range filter
   if (filters.dateRange.start || filters.dateRange.end) {
-    const articleDate = new Date(article.date);
+    const articleDate = new Date((article.published_at || '') as string);
     
     if (filters.dateRange.start) {
-      const startDate = new Date(filters.dateRange.start);
+      const startDate = new Date((filters.dateRange.start || '') as string);
       if (articleDate < startDate) return false;
     }
     
     if (filters.dateRange.end) {
-      const endDate = new Date(filters.dateRange.end);
+      const endDate = new Date((filters.dateRange.end || '') as string);
       endDate.setHours(23, 59, 59, 999);
       if (articleDate > endDate) return false;
     }

@@ -4,14 +4,9 @@ import Toast from '../components/Toast';
 import ErrorToast from '../components/ErrorToast';
 import LoadingSpinner from '../components/LoadingSpinner';
 import PullToRefresh from '../components/PullToRefresh';
-import SearchAndFilter, { type FilterOptions } from '../components/SearchAndFilter';
-import InfiniteScroll from '../components/InfiniteScroll';
-import Pagination from '../components/Pagination';
-import LoadMoreButton from '../components/LoadMoreButton';
-import PaginationModeSelector from '../components/PaginationModeSelector';
+import SearchAndFilter from '../components/SearchAndFilter';
 import ConnectionStatus from '../components/ConnectionStatus';
 import NotificationManager from '../components/NotificationManager';
-import { usePagination, type PaginationMode } from '../hooks/usePagination';
 import { websocketService, type ArticleUpdate, type StatusChange } from '../services/websocket';
 import * as api from '../services/api';
 import { getErrorInfo } from '../utils/errorHandler';
@@ -25,18 +20,6 @@ const Feed = () => {
   // Component State
   const [articles, setArticles] = useState<Article[]>([]);
   const [actingArticleId, setActingArticleId] = useState<string | null>(null);
-  const [filters, setFilters] = useState<FilterOptions>({
-    search: '',
-    status: [],
-    sources: [],
-    dateRange: {
-      start: '',
-      end: ''
-    },
-    sortBy: 'date',
-    sortOrder: 'desc'
-  });
-  const [paginationMode, setPaginationMode] = useState<PaginationMode>('infinite');
   
   // Toast notification state
   const [toast, setToast] = useState<{
@@ -142,20 +125,6 @@ const Feed = () => {
     return getUniqueSources(articles);
   }, [articles]);
 
-  // Pagination system
-  const pagination = usePagination(articles, filters, {
-    mode: paginationMode,
-    itemsPerPage: 20
-  });
-
-  const handleFilterChange = (newFilters: FilterOptions) => {
-    setFilters(newFilters);
-  };
-
-  const handlePaginationModeChange = (mode: PaginationMode) => {
-    setPaginationMode(mode);
-  };
-
   // Real-time updates handling
   useEffect(() => {
     const handleArticleUpdate = (update: ArticleUpdate) => {
@@ -236,57 +205,19 @@ const Feed = () => {
 
   // DEBUG: Log articles and pagination state
   useEffect(() => {
-    console.log('[DEBUG] Total articles from API:', articles.length);
-    console.log('[DEBUG] Pagination mode:', paginationMode);
-    console.log('[DEBUG] Pagination currentItems:', pagination.currentItems.length);
-    console.log('[DEBUG] Pagination hasMore:', pagination.hasMore);
-    console.log('[DEBUG] Pagination currentPage:', pagination.currentPage);
-    console.log('[DEBUG] Pagination totalPages:', pagination.totalPages);
-  }, [articles, paginationMode, pagination.currentItems, pagination.hasMore, pagination.currentPage, pagination.totalPages]);
+    console.log('[DEBUG] Articles:', articles.length);
+  }, [articles]);
 
   return (
-    <div>
-      <div className="feed-header">
-        <div className="feed-header-left">
-          <h1>News Feed</h1>
-          <ConnectionStatus showDetails={false} />
-        </div>
-        <button onClick={handleIngestNews} disabled={isLoading()}>
-          {isLoading('ingesting') ? (
-            <>
-              <LoadingSpinner size="small" color="white" />
-              <span style={{ marginLeft: '8px' }}>Ingesting...</span>
-            </>
-          ) : isLoading('loading_feed') ? (
-            <>
-              <LoadingSpinner size="small" color="white" />
-              <span style={{ marginLeft: '8px' }}>Loading...</span>
-            </>
-          ) : (
-            'Update News'
-          )}
-        </button>
-      </div>
-
-      {/* Real-time Notification Manager */}
+    <div className="feed-page">
+      <ConnectionStatus />
       <NotificationManager />
-
-      {/* Pagination Mode Selector */}
-      <PaginationModeSelector
-        currentMode={paginationMode}
-        onModeChange={handlePaginationModeChange}
-        totalItems={pagination.totalItems}
-      />
-
-      {/* Search and Filter Component */}
       <SearchAndFilter
-        onFilterChange={handleFilterChange}
         availableSources={availableSources}
         totalArticles={articles.length}
-        filteredCount={pagination.totalItems}
+        filteredCount={articles.length}
+        onFilterChange={() => {}}
       />
-      
-      {/* Display a loading message or the list of articles */}
       {isLoading('loading_feed') && articles.length === 0 ? (
         <div className="loading-container">
           <LoadingSpinner size="large" />
@@ -294,82 +225,20 @@ const Feed = () => {
         </div>
       ) : (
         <PullToRefresh onRefresh={loadNews}>
-          {/* Render articles based on pagination mode */}
-          {pagination.currentItems.length > 0 ? (
-            <>
-              {/* Infinite Scroll Mode */}
-              {paginationMode === 'infinite' && (
-                <InfiniteScroll
-                  onLoadMore={pagination.loadMore}
-                  hasMore={pagination.hasMore}
-                  isLoading={pagination.isLoading}
-                >
-                  <div className="articles-container">
-                    {pagination.currentItems.map((article: Article) => (
-                      <ArticleCard 
-                        key={article.id} 
-                        article={article} 
-                        onAction={handleAction}
-                        isLoading={isLoading(article.id)}
-                      />
-                    ))}
-                  </div>
-                </InfiniteScroll>
-              )}
-
-              {/* Traditional Pagination Mode */}
-              {paginationMode === 'pagination' && (
-                <>
-                  <div className="articles-container">
-                    {pagination.currentItems.map((article: Article) => (
-                      <ArticleCard 
-                        key={article.id} 
-                        article={article} 
-                        onAction={handleAction}
-                        isLoading={isLoading(article.id)}
-                      />
-                    ))}
-                  </div>
-                  <Pagination
-                    currentPage={pagination.currentPage}
-                    totalPages={pagination.totalPages}
-                    onPageChange={pagination.goToPage}
-                    totalItems={pagination.totalItems}
-                    itemsPerPage={pagination.itemsPerPage}
-                  />
-                </>
-              )}
-
-              {/* Load More Mode */}
-              {paginationMode === 'load-more' && (
-                <>
-                  <div className="articles-container">
-                    {pagination.currentItems.map((article: Article) => (
-                      <ArticleCard 
-                        key={article.id} 
-                        article={article} 
-                        onAction={handleAction}
-                        isLoading={isLoading(article.id)}
-                      />
-                    ))}
-                  </div>
-                  <LoadMoreButton
-                    onLoadMore={pagination.loadMore}
-                    hasMore={pagination.hasMore}
-                    isLoading={pagination.isLoading}
-                    totalLoaded={pagination.currentItems.length}
-                    totalAvailable={pagination.totalItems}
-                  />
-                </>
-              )}
-            </>
-          ) : articles.length > 0 ? (
-            <div className="no-results">
-              <div className="no-results-icon">🔍</div>
-              <h3>No articles found</h3>
-              <p>Try adjusting your search criteria or filters</p>
-            </div>
-          ) : null}
+          <div className="articles-container">
+            {articles.length > 0 ? (
+              articles.map((article: Article) => (
+                <ArticleCard
+                  key={article.id}
+                  article={article}
+                  onAction={handleAction}
+                  isLoading={isLoading(article.id)}
+                />
+              ))
+            ) : (
+              <div className="no-articles">No articles found.</div>
+            )}
+          </div>
         </PullToRefresh>
       )}
 

@@ -20,12 +20,10 @@ const InfiniteScroll = ({
 }: InfiniteScrollProps) => {
   const [observerTarget, setObserverTarget] = useState<HTMLDivElement | null>(null);
   const loadingRef = useRef<HTMLDivElement>(null);
-  const [isIntersecting, setIsIntersecting] = useState(false);
 
   const handleIntersection = useCallback(
     (entries: IntersectionObserverEntry[]) => {
       const [entry] = entries;
-      setIsIntersecting(entry.isIntersecting);
       
       if (entry.isIntersecting && hasMore && !isLoading) {
         onLoadMore();

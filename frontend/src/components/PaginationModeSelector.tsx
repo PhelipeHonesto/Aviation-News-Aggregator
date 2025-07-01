@@ -1,5 +1,6 @@
-import { type PaginationMode } from '../hooks/usePagination';
 import './PaginationModeSelector.css';
+
+export type PaginationMode = 'infinite' | 'load-more' | 'pagination';
 
 interface PaginationModeSelectorProps {
   currentMode: PaginationMode;

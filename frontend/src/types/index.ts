@@ -1,9 +1,10 @@
 export interface Article {
   id: string;
   title: string;
-  date: string;
-  body: string;
-  link: string;
+  summary?: string;
   source: string;
-  status: string;
+  published_at: string;
+  body?: string;
+  link?: string;
+  status?: string;
 }

@@ -12,20 +12,26 @@ import os
 from dotenv import load_dotenv
 from openai import OpenAI
 import requests
-from typing import List, Any
+from typing import List, Any, Optional
 import asyncio
+from sqlmodel import select, Session
+from sqlalchemy import func
 
 # Local imports
-from . import database
-from .database import Article
+from database import Article, engine, get_all_news, save_all_news, find_news_by_id, init_db
 from .schemas import ArticleSchema
-from .agents.aviation_pages_reader import fetch_skywest_news
-from .agents.newsdata_agent import fetch_newsdata_news
+from .agents.aviation_pages_reader import SkyWestAgent
+from .agents.newsdata_agent import NewsDataAgent
+from .agents.groundnews_agent import GroundNewsAgent
+from .agents.institutional_reader import InstitutionalReaderAgent
+from .services.openai_client import rewrite_article
+from .services.slack_client import post_article_to_slack
+from .services.scheduler import start_scheduler, schedule_ingestion_job
 
 # --- Application Setup ---
 
 # Load environment variables from a .env file at the project root
-load_dotenv(dotenv_path=database.DB_PATH.replace('news.db', '.env'))
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '.env'))
 
 app = FastAPI(
     title="OsaCurator API",
@@ -34,10 +40,44 @@ app = FastAPI(
 )
 
 
+def ingest_news_job():
+    """Job function to ingest news, used by both API and scheduler."""
+    print("[Scheduler] Running news ingestion job...")
+    all_new_articles = []
+    try:
+        print("Fetching news from SkyWest...")
+        skywest_articles = SkyWestAgent().fetch()
+        print(f"Found {len(skywest_articles)} articles from SkyWest.")
+        all_new_articles.extend(skywest_articles)
+    except Exception as e:
+        print(f"Error fetching news from SkyWest: {e}")
+    try:
+        print("Fetching news from Newsdata.io...")
+        newsdata_articles = NewsDataAgent().fetch()
+        print(f"Found {len(newsdata_articles)} articles from Newsdata.io.")
+        all_new_articles.extend(newsdata_articles)
+    except Exception as e:
+        print(f"Error fetching news from Newsdata.io: {e}")
+    existing_news = get_all_news()
+    existing_links = {article.link for article in existing_news if article.link}
+    unique_new_articles = [
+        article for article in all_new_articles
+        if article.get("link") and article["link"] not in existing_links
+    ]
+    print(f"Found {len(unique_new_articles)} new unique articles.")
+    if unique_new_articles:
+        combined_news = [Article(**a) if not isinstance(a, Article) else a for a in (unique_new_articles + [a.dict() if not isinstance(a, dict) else a for a in existing_news])]
+        save_all_news([a.dict() if isinstance(a, Article) else a for a in combined_news])
+        print(f"Saved {len(unique_new_articles)} new articles to the database.")
+    else:
+        print("No new articles to save.")
+
 @app.on_event("startup")
 def on_startup() -> None:
-    """Initialize the database on application startup."""
-    database.init_db()
+    """Initialize the database and scheduler on application startup."""
+    init_db()
+    start_scheduler()
+    schedule_ingestion_job(ingest_news_job, interval_minutes=60)
 
 # CORS (Cross-Origin Resource Sharing) middleware allows the frontend
 # (running on a different origin) to communicate with this API.
@@ -56,7 +96,7 @@ def get_article_dependency(story_id: str) -> Article:
     FastAPI dependency to fetch a single article by its ID.
     Raises a 404 HTTPException if the article is not found.
     """
-    article = database.find_news_by_id(story_id)
+    article = find_news_by_id(story_id)
     if not article:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -72,124 +112,67 @@ def read_root():
     return {"status": "ok", "message": "Welcome to OsaCurator API"}
 
 @app.get("/news", summary="Get All News", response_model=List[ArticleSchema], tags=["News"])
-def get_news():
+def get_news(
+    q: Optional[str] = None,
+    source: Optional[str] = None,
+    skip: int = 0,
+    limit: int = 20
+):
     """
-    Returns a list of all news articles, sorted by date in descending order.
+    Returns a list of all news articles, with optional search, filtering, and pagination.
     """
-    news = database.get_all_news()
-    return sorted(news, key=lambda x: x.date or "", reverse=True)
+    with Session(engine) as session:
+        statement = select(Article)
+        # Use func.lower for case-insensitive search (works across SQLModel/SQLAlchemy versions)
+        if q:
+            statement = statement.where(func.lower(Article.title).contains(q.lower()))
+        if source:
+            statement = statement.where(Article.source == source)
+        statement = statement.offset(skip).limit(limit)
+        articles = session.exec(statement).all()
+        return articles
 
 @app.post("/ingest", summary="Ingest New Articles", tags=["News"])
 def ingest_news():
-    """
-    Fetches new articles from all registered agents, filters out duplicates
-    based on the article link, and saves the new, unique articles to the database.
-    """
-    print("Starting news ingestion...")
-    all_new_articles = []
-
-    # --- SkyWest Agent ---
-    try:
-        print("Fetching news from SkyWest...")
-        skywest_articles = fetch_skywest_news()
-        print(f"Found {len(skywest_articles)} articles from SkyWest.")
-        all_new_articles.extend(skywest_articles)
-    except Exception as e:
-        print(f"Error fetching news from SkyWest: {e}")
-
-    # --- Newsdata.io Agent ---
-    try:
-        print("Fetching news from Newsdata.io...")
-        newsdata_articles = fetch_newsdata_news()
-        print(f"Found {len(newsdata_articles)} articles from Newsdata.io.")
-        all_new_articles.extend(newsdata_articles)
-    except Exception as e:
-        print(f"Error fetching news from Newsdata.io: {e}")
-
-    existing_news = database.get_all_news()
-    existing_links = {article.link for article in existing_news if article.link}
-
-    unique_new_articles = [
-        article for article in all_new_articles
-        if article.get("link") and article["link"] not in existing_links
-    ]
-
-    print(f"Found {len(unique_new_articles)} new unique articles.")
-
-    if unique_new_articles:
-        # Convert dicts to Article objects for saving
-        combined_news = [Article(**a) if not isinstance(a, Article) else a for a in (unique_new_articles + [a.dict() if not isinstance(a, dict) else a for a in existing_news])]
-        # Save as dicts for compatibility with save_all_news
-        database.save_all_news([a.dict() if isinstance(a, Article) else a for a in combined_news])
-        print(f"Saved {len(unique_new_articles)} new articles to the database.")
-    else:
-        print("No new articles to save.")
-
-    return {
-        "message": f"Successfully ingested {len(unique_new_articles)} new articles."
-    }
+    """API endpoint to trigger news ingestion immediately."""
+    ingest_news_job()
+    return {"message": "News ingestion triggered."}
 
 @app.post("/select/{story_id}", summary="Select a Story", tags=["Curation"])
 def select_story(article: Article = Depends(get_article_dependency)):
     """Marks an article's status as 'selected'."""
     article.status = "selected"
     # Save update
-    with database.Session(database.engine) as session:
+    with Session(engine) as session:
         session.add(article)
         session.commit()
     return {"message": f"Story {article.id} has been selected."}
 
 @app.post("/edit/{story_id}", summary="Rewrite a Story with AI", tags=["Curation"])
 def edit_story(article: Article = Depends(get_article_dependency)):
-    """
-    Sends a selected or previously edited article to the OpenAI API for rewriting.
-    The article's body is updated with the AI-generated text and its status is set to 'edited'.
-    """
     if article.status not in ["selected", "edited"]:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Article must be 'selected' or 'edited' before sending to AI.",
+            detail="Article must be 'selected' or 'edited' before sending to AI."
         )
-
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if not openai_api_key:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="OPENAI_API_KEY is not configured on the server.",
+            detail="OPENAI_API_KEY is not configured on the server."
         )
-
-    import httpx
-
-    # Create a custom httpx client without any proxy configuration
-    http_client = httpx.Client(timeout=httpx.Timeout(30.0), follow_redirects=True)
-
-    client = OpenAI(api_key=openai_api_key, http_client=http_client)
-    prompt = f"Rewrite the following news article for a general audience. Keep it concise, informative, and engaging. \n\nTitle: {article.title}\n\nArticle: {article.body}"
-
     try:
-        response = client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
-        )
-        edited_body = response.choices[0].message.content
-
-        if not edited_body:
-            raise HTTPException(
-                status_code=500, detail="AI failed to generate content."
-            )
-
+        edited_body = rewrite_article(article.title, article.body or "", openai_api_key)
         article.body = edited_body
         article.status = "edited"
-        with database.Session(database.engine) as session:
+        with Session(engine) as session:
             session.add(article)
             session.commit()
-
         return {"message": f"Story {article.id} has been edited by AI."}
-
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred with the OpenAI API: {e}",
+            detail=f"An error occurred with the OpenAI API: {e}"
         )
 
 def format_slack_message(article: Article) -> dict:
@@ -223,48 +206,38 @@ def format_slack_message(article: Article) -> dict:
     }
 
 @app.post("/slack/{story_id}", summary="Post Story to Slack", tags=["Curation"])
-def post_to_slack(article: Article = Depends(get_article_dependency)):
-    """
-    Formats and sends an edited article to a Slack channel via a webhook.
-    The article's status is updated to 'posted'.
-    """
+def post_to_slack_endpoint(article: Article = Depends(get_article_dependency)):
     if article.status != "edited":
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Article must be 'edited' before posting to Slack.",
+            detail="Article must be 'edited' before posting to Slack."
         )
-
     slack_webhook_url = os.getenv("SLACK_WEBHOOK_URL")
     if not slack_webhook_url:
-        # Instead of failing, just update the status and return success
         article.status = "posted"
-        with database.Session(database.engine) as session:
+        with Session(engine) as session:
             session.add(article)
             session.commit()
         return {
             "message": f"Story {article.id} has been marked as posted (Slack webhook not configured)."
         }
-
-    slack_payload = format_slack_message(article)
-
     try:
-        response = requests.post(slack_webhook_url, json=slack_payload)
-        response.raise_for_status()  # Raise an exception for bad status codes
+        post_article_to_slack(article, slack_webhook_url)
         article.status = "posted"
-        with database.Session(database.engine) as session:
+        with Session(engine) as session:
             session.add(article)
             session.commit()
         return {"message": f"Story {article.id} has been posted to Slack."}
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An error occurred posting to Slack: {e}",
+            detail=f"An error occurred posting to Slack: {e}"
         )
 
 # Get a single article by ID
 @app.get("/news/{story_id}", response_model=ArticleSchema, tags=["News"])
 def get_article(story_id: str = Path(..., description="The ID of the article to retrieve")):
-    article = database.find_news_by_id(story_id)
+    article = find_news_by_id(story_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
     return article
