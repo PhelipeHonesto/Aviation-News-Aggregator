@@ -5,6 +5,7 @@ from fastapi import (
     status,
     WebSocket,
     WebSocketDisconnect,
+    Path,
 )
 from fastapi.middleware.cors import CORSMiddleware
 import os
@@ -17,6 +18,7 @@ import asyncio
 # Local imports
 from . import database
 from .database import Article
+from .schemas import ArticleSchema
 from .agents.aviation_pages_reader import fetch_skywest_news
 from .agents.newsdata_agent import fetch_newsdata_news
 
@@ -63,7 +65,7 @@ def read_root():
     """A simple health check endpoint to confirm the API is running."""
     return {"status": "ok", "message": "Welcome to OsaCurator API"}
 
-@app.get("/news", summary="Get All News", response_model=List[Article], tags=["News"])
+@app.get("/news", summary="Get All News", response_model=List[ArticleSchema], tags=["News"])
 def get_news():
     """
     Returns a list of all news articles, sorted by date in descending order.
@@ -252,6 +254,14 @@ def post_to_slack(article: Article = Depends(get_article_dependency)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred posting to Slack: {e}",
         )
+
+# Get a single article by ID
+@app.get("/news/{story_id}", response_model=ArticleSchema, tags=["News"])
+def get_article(story_id: str = Path(..., description="The ID of the article to retrieve")):
+    article = database.find_news_by_id(story_id)
+    if not article:
+        raise HTTPException(status_code=404, detail="Article not found")
+    return article
 
 # --- WebSocket Endpoint ---
 
