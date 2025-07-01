@@ -3,6 +3,14 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #0e2a52;
+}
+
+.feed-header-left {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
 }
 
 .feed-header h1 {
@@ -55,6 +63,12 @@
         flex-direction: column;
         gap: 1rem;
         align-items: stretch;
+    }
+    
+    .feed-header-left {
+        flex-direction: column;
+        gap: 0.75rem;
+        align-items: center;
     }
     
     .feed-header h1 {

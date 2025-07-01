@@ -9,7 +9,10 @@ import InfiniteScroll from '../components/InfiniteScroll';
 import Pagination from '../components/Pagination';
 import LoadMoreButton from '../components/LoadMoreButton';
 import PaginationModeSelector from '../components/PaginationModeSelector';
+import ConnectionStatus from '../components/ConnectionStatus';
+import NotificationManager from '../components/NotificationManager';
 import { usePagination, type PaginationMode } from '../hooks/usePagination';
+import { websocketService, type ArticleUpdate, type StatusChange } from '../services/websocket';
 import * as api from '../services/api';
 import { getErrorInfo } from '../utils/errorHandler';
 import { retry } from '../utils/retry';
@@ -153,6 +156,35 @@ const Feed = () => {
     setPaginationMode(mode);
   };
 
+  // Real-time updates handling
+  useEffect(() => {
+    const handleArticleUpdate = (update: ArticleUpdate) => {
+      setArticles(prev => prev.map(article => 
+        article.id === update.id 
+          ? { ...article, ...update }
+          : article
+      ));
+    };
+
+    const handleStatusChange = (change: StatusChange) => {
+      setArticles(prev => prev.map(article => 
+        article.id === change.articleId 
+          ? { ...article, status: change.newStatus }
+          : article
+      ));
+    };
+
+    // Set up WebSocket handlers for real-time updates
+    websocketService.connect({
+      onArticleUpdate: handleArticleUpdate,
+      onStatusChange: handleStatusChange
+    });
+
+    return () => {
+      websocketService.disconnect();
+    };
+  }, []);
+
   /**
    * Handles user actions on an article card (e.g., select, edit, post).
    * @param action The type of action to perform.
@@ -205,7 +237,10 @@ const Feed = () => {
   return (
     <div>
       <div className="feed-header">
-        <h1>News Feed</h1>
+        <div className="feed-header-left">
+          <h1>News Feed</h1>
+          <ConnectionStatus showDetails={false} />
+        </div>
         <button onClick={handleIngestNews} disabled={isLoading()}>
           {isLoading('ingesting') ? (
             <>
@@ -222,6 +257,9 @@ const Feed = () => {
           )}
         </button>
       </div>
+
+      {/* Real-time Notification Manager */}
+      <NotificationManager />
 
       {/* Pagination Mode Selector */}
       <PaginationModeSelector
