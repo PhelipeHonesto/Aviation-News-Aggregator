@@ -79,6 +79,11 @@ Next, install the Node.js dependencies for the React frontend.
     npm install
     ```
 
+3.  **Build the frontend for production:**
+    ```bash
+    npm run build
+    ```
+
 ### 3. Running the Application
 
 You will need two separate terminal windows to run both the backend and frontend servers.
@@ -93,6 +98,7 @@ Alternatively, you can start both at once using the `start_dev.sh` script in the
     *   Navigate to the `backend` directory.
     *   Activate the virtual environment: `source venv/bin/activate`
     *   Start the FastAPI server: `uvicorn main:app --reload`
+      *(If running from the project root, use `uvicorn backend.main:app --reload`)*
     *   The backend will be running at `http://localhost:8000`.
 
 2.  **Run the Frontend Server:**
@@ -113,6 +119,18 @@ To start both the backend and frontend at once, run the helper script from the p
 ```
 
 The script launches the FastAPI backend and Vite frontend concurrently. Press `Ctrl+C` to stop both servers.
+
+### Pre-commit Hooks
+
+This repository uses `pre-commit` to run linters and formatters automatically.
+If you encounter errors when running the hooks, try upgrading `pre-commit` and
+`identify`:
+
+```bash
+pip install -U pre-commit identify
+```
+
+You can bypass the hooks temporarily with `git commit --no-verify`.
 
 ## License
 
