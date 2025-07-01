@@ -234,6 +234,16 @@ const Feed = () => {
     return false;
   };
 
+  // DEBUG: Log articles and pagination state
+  useEffect(() => {
+    console.log('[DEBUG] Total articles from API:', articles.length);
+    console.log('[DEBUG] Pagination mode:', paginationMode);
+    console.log('[DEBUG] Pagination currentItems:', pagination.currentItems.length);
+    console.log('[DEBUG] Pagination hasMore:', pagination.hasMore);
+    console.log('[DEBUG] Pagination currentPage:', pagination.currentPage);
+    console.log('[DEBUG] Pagination totalPages:', pagination.totalPages);
+  }, [articles, paginationMode, pagination.currentItems, pagination.hasMore, pagination.currentPage, pagination.totalPages]);
+
   return (
     <div>
       <div className="feed-header">
