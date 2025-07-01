@@ -5,6 +5,6 @@ export interface Article {
   source: string;
   published_at: string;
   body?: string;
-  link?: string;
+  link: string;
   status?: string;
 }

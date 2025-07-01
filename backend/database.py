@@ -3,6 +3,8 @@
 from typing import List, Optional
 import os
 import uuid
+import logging
+from datetime import datetime
 
 from sqlalchemy import text
 from sqlmodel import Field, Session, SQLModel, create_engine, select
@@ -15,7 +17,8 @@ engine = create_engine(f"sqlite:///{DB_PATH}", echo=False)
 class Article(SQLModel, table=True):
     id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
     title: str
-    date: str
+    summary: Optional[str] = None
+    published_at: datetime
     body: Optional[str] = None
     link: str
     source: str
@@ -34,12 +37,28 @@ def get_all_news() -> List[Article]:
         return articles
 
 def save_all_news(news_list: List[dict]) -> None:
-    """Replace all news articles with the given list."""
+    """Upsert news articles by ID instead of deleting all. If no ID, create new."""
     with Session(engine) as session:
-        session.exec(text("DELETE FROM article"))
         for news in news_list:
-            article = Article(**news)
-            session.add(article)
+            try:
+                news_id = news.get("id")
+                article = session.get(Article, news_id) if news_id else None
+                if article:
+                    for key, value in news.items():
+                        setattr(article, key, value)
+                else:
+                    # If missing fields, fill with defaults
+                    if not news_id:
+                        news["id"] = str(uuid.uuid4())
+                    if "published_at" in news and isinstance(news["published_at"], str):
+                        try:
+                            news["published_at"] = datetime.fromisoformat(news["published_at"])
+                        except Exception:
+                            news["published_at"] = datetime.now()
+                    article = Article(**news)
+                    session.add(article)
+            except Exception as e:
+                logging.error(f"Error upserting article: {e}")
         session.commit()
 
 def find_news_by_id(story_id: str) -> Optional[Article]:

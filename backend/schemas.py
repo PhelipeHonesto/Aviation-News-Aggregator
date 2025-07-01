@@ -9,7 +9,7 @@ class ArticleSchema(BaseModel):
     source: str
     published_at: datetime
     body: Optional[str] = None
-    link: Optional[str] = None
+    link: str
     status: Optional[str] = None
 
     class Config:

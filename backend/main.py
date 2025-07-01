@@ -16,6 +16,7 @@ from typing import List, Any, Optional
 import asyncio
 from sqlmodel import select, Session
 from sqlalchemy import func
+import logging
 
 # Local imports
 from database import Article, engine, get_all_news, save_all_news, find_news_by_id, init_db
@@ -39,38 +40,39 @@ app = FastAPI(
     version="1.0.0",
 )
 
+logging.basicConfig(level=logging.INFO)
 
-def ingest_news_job():
+def ingest_news_job() -> None:
     """Job function to ingest news, used by both API and scheduler."""
-    print("[Scheduler] Running news ingestion job...")
+    logging.info("[Scheduler] Running news ingestion job...")
     all_new_articles = []
     try:
-        print("Fetching news from SkyWest...")
+        logging.info("Fetching news from SkyWest...")
         skywest_articles = SkyWestAgent().fetch()
-        print(f"Found {len(skywest_articles)} articles from SkyWest.")
+        logging.info(f"Found {len(skywest_articles)} articles from SkyWest.")
         all_new_articles.extend(skywest_articles)
     except Exception as e:
-        print(f"Error fetching news from SkyWest: {e}")
+        logging.error(f"Error fetching news from SkyWest: {e}")
     try:
-        print("Fetching news from Newsdata.io...")
+        logging.info("Fetching news from Newsdata.io...")
         newsdata_articles = NewsDataAgent().fetch()
-        print(f"Found {len(newsdata_articles)} articles from Newsdata.io.")
+        logging.info(f"Found {len(newsdata_articles)} articles from Newsdata.io.")
         all_new_articles.extend(newsdata_articles)
     except Exception as e:
-        print(f"Error fetching news from Newsdata.io: {e}")
+        logging.error(f"Error fetching news from Newsdata.io: {e}")
     existing_news = get_all_news()
     existing_links = {article.link for article in existing_news if article.link}
     unique_new_articles = [
         article for article in all_new_articles
         if article.get("link") and article["link"] not in existing_links
     ]
-    print(f"Found {len(unique_new_articles)} new unique articles.")
+    logging.info(f"Found {len(unique_new_articles)} new unique articles.")
     if unique_new_articles:
         combined_news = [Article(**a) if not isinstance(a, Article) else a for a in (unique_new_articles + [a.dict() if not isinstance(a, dict) else a for a in existing_news])]
         save_all_news([a.dict() if isinstance(a, Article) else a for a in combined_news])
-        print(f"Saved {len(unique_new_articles)} new articles to the database.")
+        logging.info(f"Saved {len(unique_new_articles)} new articles to the database.")
     else:
-        print("No new articles to save.")
+        logging.info("No new articles to save.")
 
 @app.on_event("startup")
 def on_startup() -> None:
@@ -107,7 +109,7 @@ def get_article_dependency(story_id: str) -> Article:
 # --- API Endpoints ---
 
 @app.get("/", summary="Root Endpoint", tags=["Health"])
-def read_root():
+def read_root() -> dict:
     """A simple health check endpoint to confirm the API is running."""
     return {"status": "ok", "message": "Welcome to OsaCurator API"}
 
@@ -117,13 +119,12 @@ def get_news(
     source: Optional[str] = None,
     skip: int = 0,
     limit: int = 20
-):
+) -> List[ArticleSchema]:
     """
     Returns a list of all news articles, with optional search, filtering, and pagination.
     """
     with Session(engine) as session:
         statement = select(Article)
-        # Use func.lower for case-insensitive search (works across SQLModel/SQLAlchemy versions)
         if q:
             statement = statement.where(func.lower(Article.title).contains(q.lower()))
         if source:
@@ -133,30 +134,39 @@ def get_news(
         return articles
 
 @app.post("/ingest", summary="Ingest New Articles", tags=["News"])
-def ingest_news():
+def ingest_news() -> dict:
     """API endpoint to trigger news ingestion immediately."""
-    ingest_news_job()
-    return {"message": "News ingestion triggered."}
+    try:
+        ingest_news_job()
+        return {"message": "News ingestion triggered."}
+    except Exception as e:
+        logging.error(f"Error during ingestion: {e}")
+        raise HTTPException(status_code=500, detail="Error during ingestion.")
 
 @app.post("/select/{story_id}", summary="Select a Story", tags=["Curation"])
-def select_story(article: Article = Depends(get_article_dependency)):
+def select_story(article: Article = Depends(get_article_dependency)) -> dict:
     """Marks an article's status as 'selected'."""
-    article.status = "selected"
-    # Save update
-    with Session(engine) as session:
-        session.add(article)
-        session.commit()
-    return {"message": f"Story {article.id} has been selected."}
+    try:
+        article.status = "selected"
+        with Session(engine) as session:
+            session.add(article)
+            session.commit()
+        return {"message": f"Story {article.id} has been selected."}
+    except Exception as e:
+        logging.error(f"Error selecting story: {e}")
+        raise HTTPException(status_code=500, detail="Error selecting story.")
 
 @app.post("/edit/{story_id}", summary="Rewrite a Story with AI", tags=["Curation"])
-def edit_story(article: Article = Depends(get_article_dependency)):
+def edit_story(article: Article = Depends(get_article_dependency)) -> dict:
     if article.status not in ["selected", "edited"]:
+        logging.warning("Article must be 'selected' or 'edited' before sending to AI.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Article must be 'selected' or 'edited' before sending to AI."
         )
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if not openai_api_key:
+        logging.error("OPENAI_API_KEY is not configured on the server.")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="OPENAI_API_KEY is not configured on the server."
@@ -170,6 +180,7 @@ def edit_story(article: Article = Depends(get_article_dependency)):
             session.commit()
         return {"message": f"Story {article.id} has been edited by AI."}
     except Exception as e:
+        logging.error(f"An error occurred with the OpenAI API: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred with the OpenAI API: {e}"
@@ -206,8 +217,9 @@ def format_slack_message(article: Article) -> dict:
     }
 
 @app.post("/slack/{story_id}", summary="Post Story to Slack", tags=["Curation"])
-def post_to_slack_endpoint(article: Article = Depends(get_article_dependency)):
+def post_to_slack_endpoint(article: Article = Depends(get_article_dependency)) -> dict:
     if article.status != "edited":
+        logging.warning("Article must be 'edited' before posting to Slack.")
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Article must be 'edited' before posting to Slack."
@@ -229,6 +241,7 @@ def post_to_slack_endpoint(article: Article = Depends(get_article_dependency)):
             session.commit()
         return {"message": f"Story {article.id} has been posted to Slack."}
     except Exception as e:
+        logging.error(f"An error occurred posting to Slack: {e}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An error occurred posting to Slack: {e}"
@@ -236,9 +249,10 @@ def post_to_slack_endpoint(article: Article = Depends(get_article_dependency)):
 
 # Get a single article by ID
 @app.get("/news/{story_id}", response_model=ArticleSchema, tags=["News"])
-def get_article(story_id: str = Path(..., description="The ID of the article to retrieve")):
+def get_article(story_id: str = Path(..., description="The ID of the article to retrieve")) -> ArticleSchema:
     article = find_news_by_id(story_id)
     if not article:
+        logging.warning(f"Article with ID {story_id} not found.")
         raise HTTPException(status_code=404, detail="Article not found")
     return article
 
@@ -252,4 +266,4 @@ async def websocket_endpoint(websocket: WebSocket):
             await websocket.send_json({"type": "ping", "data": "pong"})
             await asyncio.sleep(10)
     except WebSocketDisconnect:
-        print("WebSocket disconnected")
+        logging.info("WebSocket disconnected")

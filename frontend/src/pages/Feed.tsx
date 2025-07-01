@@ -208,6 +208,12 @@ const Feed = () => {
     console.log('[DEBUG] Articles:', articles.length);
   }, [articles]);
 
+  const parsePublishedAt = (published_at: string | undefined): Date | undefined => {
+    if (!published_at) return undefined;
+    const d = new Date(published_at);
+    return isNaN(d.getTime()) ? undefined : d;
+  };
+
   return (
     <div className="feed-page">
       <ConnectionStatus />

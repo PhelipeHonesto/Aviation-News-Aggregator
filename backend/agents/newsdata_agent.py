@@ -5,6 +5,7 @@ from pathlib import Path
 
 import requests
 from dotenv import load_dotenv
+import logging
 
 from .base import NewsAgent
 
@@ -20,7 +21,7 @@ class NewsDataAgent(NewsAgent):
 
         API_KEY = os.getenv("NEWSDATA_API_KEY")
         if not API_KEY:
-            print("Error: NEWSDATA_API_KEY not found in .env file.")
+            logging.error("Error: NEWSDATA_API_KEY not found in .env file.")
             return []
 
         URL = f"https://newsdata.io/api/1/news?apikey={API_KEY}&q=aviation&language=en"
@@ -30,19 +31,20 @@ class NewsDataAgent(NewsAgent):
             response.raise_for_status()
             data = response.json()
         except requests.exceptions.RequestException as e:
-            print(f"Error fetching from Newsdata.io: {e}")
+            logging.error(f"Error fetching from Newsdata.io: {e}")
             return []
         except ValueError:  # Catches JSON decoding errors
-            print("Error: Could not decode JSON response from Newsdata.io")
+            logging.error("Error: Could not decode JSON response from Newsdata.io")
             return []
 
         articles = []
         if data.get("status") == "success":
             for item in data.get("results", []):
                 article = {
-                    "id": str(uuid.uuid4()),
+                    # No 'id' field; let DB handle it
                     "title": item.get("title"),
-                    "date": item.get("pubDate", datetime.now().isoformat()),
+                    "summary": item.get("description", ""),
+                    "published_at": item.get("pubDate", datetime.now().isoformat()),
                     "body": item.get("description", ""),
                     "link": item.get("link"),
                     "source": item.get("source_id", "Newsdata.io"),
@@ -52,9 +54,7 @@ class NewsDataAgent(NewsAgent):
                 if article["title"] and article["link"]:
                     articles.append(article)
         else:
-            print(
-                f"Newsdata.io API returned an error: {data.get('results', {}).get('message')}"
-            )
+            logging.error(f"Newsdata.io API returned an error: {data.get('results', {}).get('message')}")
 
         return articles
 

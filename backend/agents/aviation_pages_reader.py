@@ -8,6 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 from bs4.element import Tag
 from .base import NewsAgent
+import logging
 
 class SkyWestAgent(NewsAgent):
     HEADERS = {"User-Agent": "Mozilla/5.0"}
@@ -19,7 +20,7 @@ class SkyWestAgent(NewsAgent):
             resp = requests.get(url, headers=self.HEADERS, timeout=10)
             resp.raise_for_status()
         except requests.RequestException as exc:
-            print(f"Error fetching article body from {url}: {exc}")
+            logging.error(f"Error fetching article body from {url}: {exc}")
             return ""
 
         soup = BeautifulSoup(resp.content, "lxml")
@@ -44,7 +45,7 @@ class SkyWestAgent(NewsAgent):
             response = requests.get(self.URL, headers=self.HEADERS, timeout=10)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
-            print(f"Error fetching URL {self.URL}: {e}")
+            logging.error(f"Error fetching URL {self.URL}: {e}")
             return []
 
         soup = BeautifulSoup(response.content, "lxml")
@@ -74,9 +75,10 @@ class SkyWestAgent(NewsAgent):
                     parsed_date = datetime.now()
 
                 article = {
-                    "id": str(uuid.uuid4()),
+                    # No 'id' field; let DB handle it
                     "title": title,
-                    "date": parsed_date.isoformat(),
+                    "summary": body[:200] if body else "",  # Use first 200 chars as summary
+                    "published_at": parsed_date.isoformat(),
                     "body": body,
                     "link": link,
                     "source": "SkyWest, Inc.",
