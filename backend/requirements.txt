@@ -7,3 +7,4 @@ python-dotenv
 openai
 sqlmodel
 sqlalchemy
+apscheduler
