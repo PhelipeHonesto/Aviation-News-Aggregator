@@ -1,4 +1,11 @@
-from fastapi import FastAPI, Depends, HTTPException, status, WebSocket, WebSocketDisconnect
+from fastapi import (
+    FastAPI,
+    Depends,
+    HTTPException,
+    status,
+    WebSocket,
+    WebSocketDisconnect,
+)
 from fastapi.middleware.cors import CORSMiddleware
 import os
 from dotenv import load_dotenv
@@ -35,6 +42,7 @@ app.add_middleware(
 
 # --- Dependencies ---
 
+
 def get_article_dependency(story_id: str) -> Dict[str, Any]:
     """
     FastAPI dependency to fetch a single article by its ID.
@@ -48,12 +56,15 @@ def get_article_dependency(story_id: str) -> Dict[str, Any]:
         )
     return article
 
+
 # --- API Endpoints ---
+
 
 @app.get("/", summary="Root Endpoint", tags=["Health"])
 def read_root():
     """A simple health check endpoint to confirm the API is running."""
     return {"status": "ok", "message": "Welcome to OsaCurator API"}
+
 
 @app.get("/news", summary="Get All News", response_model=List[Dict], tags=["News"])
 def get_news():
@@ -63,6 +74,7 @@ def get_news():
     news = database.get_all_news()
     return sorted(news, key=lambda x: x.get("date", ""), reverse=True)
 
+
 @app.post("/ingest", summary="Ingest New Articles", tags=["News"])
 def ingest_news():
     """
@@ -71,7 +83,7 @@ def ingest_news():
     """
     print("Starting news ingestion...")
     all_new_articles = []
-    
+
     # --- SkyWest Agent ---
     try:
         print("Fetching news from SkyWest...")
@@ -94,7 +106,9 @@ def ingest_news():
     existing_links = {article["link"] for article in existing_news if "link" in article}
 
     unique_new_articles = [
-        article for article in all_new_articles if article.get("link") and article["link"] not in existing_links
+        article
+        for article in all_new_articles
+        if article.get("link") and article["link"] not in existing_links
     ]
 
     print(f"Found {len(unique_new_articles)} new unique articles.")
@@ -106,7 +120,10 @@ def ingest_news():
     else:
         print("No new articles to save.")
 
-    return {"message": f"Successfully ingested {len(unique_new_articles)} new articles."}
+    return {
+        "message": f"Successfully ingested {len(unique_new_articles)} new articles."
+    }
+
 
 @app.post("/select/{story_id}", summary="Select a Story", tags=["Curation"])
 def select_story(article: Dict = Depends(get_article_dependency)):
@@ -119,6 +136,7 @@ def select_story(article: Dict = Depends(get_article_dependency)):
     database.save_all_news(all_news)
     return {"message": f"Story {article.get('id')} has been selected."}
 
+
 @app.post("/edit/{story_id}", summary="Rewrite a Story with AI", tags=["Curation"])
 def edit_story(article: Dict = Depends(get_article_dependency)):
     """
@@ -130,7 +148,7 @@ def edit_story(article: Dict = Depends(get_article_dependency)):
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Article must be 'selected' or 'edited' before sending to AI.",
         )
-    
+
     openai_api_key = os.getenv("OPENAI_API_KEY")
     if not openai_api_key:
         raise HTTPException(
@@ -139,28 +157,24 @@ def edit_story(article: Dict = Depends(get_article_dependency)):
         )
 
     import httpx
-    
+
     # Create a custom httpx client without any proxy configuration
-    http_client = httpx.Client(
-        timeout=httpx.Timeout(30.0),
-        follow_redirects=True
-    )
-    
-    client = OpenAI(
-        api_key=openai_api_key,
-        http_client=http_client
-    )
+    http_client = httpx.Client(timeout=httpx.Timeout(30.0), follow_redirects=True)
+
+    client = OpenAI(api_key=openai_api_key, http_client=http_client)
     prompt = f"Rewrite the following news article for a general audience. Keep it concise, informative, and engaging. \n\nTitle: {article.get('title')}\n\nArticle: {article.get('body')}"
-    
+
     try:
         response = client.chat.completions.create(
             model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
         )
         edited_body = response.choices[0].message.content
-        
+
         if not edited_body:
-            raise HTTPException(status_code=500, detail="AI failed to generate content.")
+            raise HTTPException(
+                status_code=500, detail="AI failed to generate content."
+            )
 
         all_news = database.get_all_news()
         for item in all_news:
@@ -185,11 +199,17 @@ def format_slack_message(article: Dict[str, Any]) -> Dict[str, Any]:
         "blocks": [
             {
                 "type": "header",
-                "text": {"type": "plain_text", "text": f":newspaper: {article.get('title', 'No Title')}"},
+                "text": {
+                    "type": "plain_text",
+                    "text": f":newspaper: {article.get('title', 'No Title')}",
+                },
             },
             {
                 "type": "section",
-                "text": {"type": "mrkdwn", "text": article.get("body", "No content available.")},
+                "text": {
+                    "type": "mrkdwn",
+                    "text": article.get("body", "No content available."),
+                },
             },
             {
                 "type": "context",
@@ -202,6 +222,7 @@ def format_slack_message(article: Dict[str, Any]) -> Dict[str, Any]:
             },
         ]
     }
+
 
 @app.post("/slack/{story_id}", summary="Post Story to Slack", tags=["Curation"])
 def post_to_slack(article: Dict = Depends(get_article_dependency)):
@@ -224,10 +245,12 @@ def post_to_slack(article: Dict = Depends(get_article_dependency)):
                 item["status"] = "posted"
                 break
         database.save_all_news(all_news)
-        return {"message": f"Story {article.get('id')} has been marked as posted (Slack webhook not configured)."}
+        return {
+            "message": f"Story {article.get('id')} has been marked as posted (Slack webhook not configured)."
+        }
 
     slack_payload = format_slack_message(article)
-    
+
     try:
         response = requests.post(slack_webhook_url, json=slack_payload)
         response.raise_for_status()  # Raise an exception for bad status codes
@@ -247,7 +270,9 @@ def post_to_slack(article: Dict = Depends(get_article_dependency)):
             detail=f"Failed to post to Slack: {e}",
         )
 
+
 # --- WebSocket Endpoint ---
+
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
