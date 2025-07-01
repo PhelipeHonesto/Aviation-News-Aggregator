@@ -9,6 +9,7 @@ OsaCurator is a full-stack news curation web application designed to gather arti
 - **AI-Powered Editing:** Integrates with OpenAI's GPT-4o to rewrite and refine article content.
 - **Slack Integration:** Posts curated articles directly to a Slack channel using webhooks.
 - **Modern UI:** A clean, responsive dashboard built with React and TypeScript.
+- **SQLite Storage:** Articles are persisted using SQLModel with SQLite.
 
 ## Project Structure
 
@@ -18,7 +19,7 @@ osacurator/
 │   ├── agents/      # Modules for ingesting news
 │   ├── .env         # API keys and secrets (must be created)
 │   ├── main.py      # Main FastAPI application
-│   ├── database.py  # Handles reading/writing to news.json
+│   ├── database.py  # SQLModel models and database helpers (SQLite)
 │   └── requirements.txt
 │
 └── frontend/        # React/Vite frontend
