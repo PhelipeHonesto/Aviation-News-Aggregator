@@ -4,4 +4,6 @@ requests
 beautifulsoup4
 lxml
 python-dotenv
-openai 
+openai
+sqlmodel
+sqlalchemy
