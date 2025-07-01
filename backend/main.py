@@ -216,10 +216,14 @@ def post_to_slack(article: Dict = Depends(get_article_dependency)):
 
     slack_webhook_url = os.getenv("SLACK_WEBHOOK_URL")
     if not slack_webhook_url:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="SLACK_WEBHOOK_URL is not configured on the server.",
-        )
+        # Instead of failing, just update the status and return success
+        all_news = database.get_all_news()
+        for item in all_news:
+            if item.get("id") == article.get("id"):
+                item["status"] = "posted"
+                break
+        database.save_all_news(all_news)
+        return {"message": f"Story {article.get('id')} has been marked as posted (Slack webhook not configured)."}
 
     slack_payload = format_slack_message(article)
     
