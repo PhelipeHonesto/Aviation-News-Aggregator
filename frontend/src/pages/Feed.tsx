@@ -1,12 +1,14 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import ArticleCard from '../components/ArticleCard';
 import Toast from '../components/Toast';
 import ErrorToast from '../components/ErrorToast';
 import LoadingSpinner from '../components/LoadingSpinner';
 import PullToRefresh from '../components/PullToRefresh';
+import SearchAndFilter, { type FilterOptions } from '../components/SearchAndFilter';
 import * as api from '../services/api';
 import { getErrorInfo } from '../utils/errorHandler';
 import { retry } from '../utils/retry';
+import { filterAndSortArticles, getUniqueSources } from '../utils/filterUtils';
 import type { Article } from '../types';
 import type { ErrorInfo } from '../utils/errorHandler';
 import './Feed.css';
@@ -15,6 +17,17 @@ const Feed = () => {
   // Component State
   const [articles, setArticles] = useState<Article[]>([]);
   const [actingArticleId, setActingArticleId] = useState<string | null>(null);
+  const [filters, setFilters] = useState<FilterOptions>({
+    search: '',
+    status: [],
+    sources: [],
+    dateRange: {
+      start: '',
+      end: ''
+    },
+    sortBy: 'date',
+    sortOrder: 'desc'
+  });
   
   // Toast notification state
   const [toast, setToast] = useState<{
@@ -115,6 +128,20 @@ const Feed = () => {
     handleRetry(handleIngestNews);
   };
 
+  // Filter and sort articles
+  const filteredArticles = useMemo(() => {
+    return filterAndSortArticles(articles, filters);
+  }, [articles, filters]);
+
+  // Get unique sources for filter options
+  const availableSources = useMemo(() => {
+    return getUniqueSources(articles);
+  }, [articles]);
+
+  const handleFilterChange = (newFilters: FilterOptions) => {
+    setFilters(newFilters);
+  };
+
   /**
    * Handles user actions on an article card (e.g., select, edit, post).
    * @param action The type of action to perform.
@@ -184,6 +211,14 @@ const Feed = () => {
           )}
         </button>
       </div>
+
+      {/* Search and Filter Component */}
+      <SearchAndFilter
+        onFilterChange={handleFilterChange}
+        availableSources={availableSources}
+        totalArticles={articles.length}
+        filteredCount={filteredArticles.length}
+      />
       
       {/* Display a loading message or the list of articles */}
       {isLoading('loading_feed') && articles.length === 0 ? (
@@ -194,14 +229,22 @@ const Feed = () => {
       ) : (
         <PullToRefresh onRefresh={loadNews}>
           <div className="articles-container">
-            {articles.map(article => (
-              <ArticleCard 
-                key={article.id} 
-                article={article} 
-                onAction={handleAction}
-                isLoading={isLoading(article.id)}
-              />
-            ))}
+            {filteredArticles.length > 0 ? (
+              filteredArticles.map(article => (
+                <ArticleCard 
+                  key={article.id} 
+                  article={article} 
+                  onAction={handleAction}
+                  isLoading={isLoading(article.id)}
+                />
+              ))
+            ) : articles.length > 0 ? (
+              <div className="no-results">
+                <div className="no-results-icon">🔍</div>
+                <h3>No articles found</h3>
+                <p>Try adjusting your search criteria or filters</p>
+              </div>
+            ) : null}
           </div>
         </PullToRefresh>
       )}
