@@ -1,3 +1,5 @@
+"""Utilities for scraping news from aviation web pages."""
+
 import uuid
 from datetime import datetime
 from urllib.parse import urljoin
@@ -5,14 +7,36 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup
 
+HEADERS = {"User-Agent": "Mozilla/5.0"}
+
+
+def _fetch_article_body(url: str) -> str:
+    """Return the first paragraph or Open Graph description of a news article."""
+    try:
+        resp = requests.get(url, headers=HEADERS, timeout=10)
+        resp.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"Error fetching article body from {url}: {exc}")
+        return ""
+
+    soup = BeautifulSoup(resp.content, "lxml")
+
+    og = soup.find("meta", attrs={"property": "og:description"})
+    if og and og.get("content"):
+        return og["content"].strip()
+
+    first_p = soup.find("p")
+    if first_p:
+        return first_p.get_text(strip=True)
+
+    return ""
+
 
 def fetch_skywest_news():
-    """
-    Scrapes the SkyWest, Inc. press release website for news.
-    """
+    """Scrape the SkyWest press release page and return recent articles."""
     URL = "https://inc.skywest.com/news-and-events/press-releases/"
     try:
-        response = requests.get(URL, headers={"User-Agent": "Mozilla/5.0"})
+        response = requests.get(URL, headers=HEADERS, timeout=10)
         response.raise_for_status()
     except requests.exceptions.RequestException as e:
         print(f"Error fetching URL {URL}: {e}")
@@ -34,7 +58,7 @@ def fetch_skywest_news():
                 continue
             link = urljoin(URL, relative_link)
 
-            body = ""
+            body = _fetch_article_body(link)
 
             date_str = date_element.get_text(strip=True)
             try:
