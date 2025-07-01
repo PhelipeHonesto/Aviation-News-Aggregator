@@ -3,6 +3,7 @@ import ArticleCard from '../components/ArticleCard';
 import Toast from '../components/Toast';
 import ErrorToast from '../components/ErrorToast';
 import LoadingSpinner from '../components/LoadingSpinner';
+import PullToRefresh from '../components/PullToRefresh';
 import * as api from '../services/api';
 import { getErrorInfo } from '../utils/errorHandler';
 import { retry } from '../utils/retry';
@@ -191,16 +192,18 @@ const Feed = () => {
           <p>Loading news feed...</p>
         </div>
       ) : (
-        <div className="articles-container">
-          {articles.map(article => (
-            <ArticleCard 
-              key={article.id} 
-              article={article} 
-              onAction={handleAction}
-              isLoading={isLoading(article.id)}
-            />
-          ))}
-        </div>
+        <PullToRefresh onRefresh={loadNews}>
+          <div className="articles-container">
+            {articles.map(article => (
+              <ArticleCard 
+                key={article.id} 
+                article={article} 
+                onAction={handleAction}
+                isLoading={isLoading(article.id)}
+              />
+            ))}
+          </div>
+        </PullToRefresh>
       )}
 
       {/* Toast notifications */}

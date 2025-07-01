@@ -1,8 +1,13 @@
 import { Outlet, Link } from 'react-router-dom';
+import MobileNav from './MobileNav';
 
 const Layout = () => {
   return (
     <div className="app-container">
+      {/* Mobile Navigation */}
+      <MobileNav />
+      
+      {/* Desktop Navigation */}
       <nav className="main-nav">
         <div className="nav-logo">
           <img src="/logo.jpeg" alt="Orange Sunshine Aviation Logo" />

@@ -262,6 +262,40 @@ body {
     width: 100%;
     height: auto;
     position: relative;
+    padding: 1rem;
+  }
+  
+  .nav-logo {
+    margin-bottom: 1.5rem;
+  }
+  
+  .nav-logo img {
+    width: 60px;
+  }
+  
+  .nav-logo span {
+    font-size: 1.2rem;
+  }
+  
+  .main-nav ul {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .main-nav ul li {
+    flex: 1;
+    min-width: 120px;
+  }
+  
+  .main-nav ul li a {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+  
+  .content-area {
+    padding: 1rem;
   }
   
   .articles-container {
@@ -269,12 +303,81 @@ body {
     gap: 1rem;
   }
   
+  .article-card {
+    padding: 1rem;
+  }
+  
   .card-actions {
     flex-direction: column;
     align-items: stretch;
+    gap: 0.75rem;
   }
   
   .action-buttons {
     justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .action-btn {
+    min-height: 44px; /* Touch-friendly minimum size */
+    padding: 0.75rem 1rem;
+    font-size: 0.85rem;
+  }
+}
+
+/* Tablet Responsive */
+@media (min-width: 769px) and (max-width: 1024px) {
+  .main-nav {
+    width: 200px;
+  }
+  
+  .articles-container {
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+/* Large screens */
+@media (min-width: 1025px) {
+  .articles-container {
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 2rem;
+  }
+}
+
+/* Mobile-specific touch improvements */
+@media (max-width: 768px) {
+  /* Improve touch targets */
+  button, a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  /* Prevent zoom on input focus */
+  input, textarea, select {
+    font-size: 16px;
+  }
+  
+  /* Smooth scrolling */
+  html, body {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+  
+  /* Better tap highlights */
+  * {
+    -webkit-tap-highlight-color: rgba(241, 117, 0, 0.2);
+  }
+  
+  /* Prevent horizontal scroll */
+  body {
+    overflow-x: hidden;
+  }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+  .article-card {
+    border-width: 0.5px;
   }
 }
