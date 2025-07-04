@@ -1,4 +1,13 @@
 fastapi
-uvicorn
+uvicorn[standard]
 requests
 python-dotenv
+sqlmodel
+sqlalchemy
+aiofiles
+python-multipart
+beautifulsoup4
+lxml
+openai
+httpx
+apscheduler

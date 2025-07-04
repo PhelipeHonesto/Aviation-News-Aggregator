@@ -7,7 +7,8 @@ import PullToRefresh from '../components/PullToRefresh';
 import SearchAndFilter from '../components/SearchAndFilter';
 import ConnectionStatus from '../components/ConnectionStatus';
 import NotificationManager from '../components/NotificationManager';
-import { websocketService, type ArticleUpdate, type StatusChange } from '../services/websocket';
+// WebSocket temporarily disabled
+// import { websocketService, type ArticleUpdate, type StatusChange } from '../services/websocket';
 import * as api from '../services/api';
 import { getErrorInfo } from '../utils/errorHandler';
 import { retry } from '../utils/retry';
@@ -74,9 +75,10 @@ const Feed = () => {
   const loadNews = useCallback(async () => {
     setActingArticleId('loading_feed');
     try {
-      const response = await fetch("http://localhost:8000/news");
+      const response = await fetch("/api/news");
       const data = await response.json();
-      setArticles(data.results || []);
+      console.log("Fetched news:", data);
+      setArticles(data);
     } catch (err) {
       showErrorToast(err, 'loading news');
     } finally {
@@ -123,34 +125,14 @@ const Feed = () => {
     return getUniqueSources(articles);
   }, [articles]);
 
-  // Real-time updates handling
+  // Simple polling for updates (temporary replacement for WebSocket)
   useEffect(() => {
-    const handleArticleUpdate = (update: ArticleUpdate) => {
-      setArticles(prev => prev.map(article => 
-        article.id === update.id 
-          ? { ...article, ...update }
-          : article
-      ));
-    };
+    const pollInterval = setInterval(() => {
+      loadNews(); // Refresh news every 30 seconds
+    }, 30000);
 
-    const handleStatusChange = (change: StatusChange) => {
-      setArticles(prev => prev.map(article => 
-        article.id === change.articleId 
-          ? { ...article, status: change.newStatus }
-          : article
-      ));
-    };
-
-    // Set up WebSocket handlers for real-time updates
-    websocketService.connect({
-      onArticleUpdate: handleArticleUpdate,
-      onStatusChange: handleStatusChange
-    });
-
-    return () => {
-      websocketService.disconnect();
-    };
-  }, []);
+    return () => clearInterval(pollInterval);
+  }, [loadNews]);
 
   /**
    * Handles user actions on an article card (e.g., select, edit, post).
@@ -206,11 +188,6 @@ const Feed = () => {
     console.log('[DEBUG] Articles:', articles.length);
   }, [articles]);
 
-  const parsePublishedAt = (published_at: string | undefined): Date | undefined => {
-    if (!published_at) return undefined;
-    const d = new Date(published_at);
-    return isNaN(d.getTime()) ? undefined : d;
-  };
 
   return (
     <div className="feed-page">

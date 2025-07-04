@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { 
-  websocketService, 
   type SystemNotification, 
   type StatusChange, 
   type NewArticle 
@@ -19,45 +18,13 @@ const NotificationManager = () => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [isVisible, setIsVisible] = useState(false);
 
+  // WebSocket temporarily disabled - show static notification
   useEffect(() => {
-    const handlers = {
-      onSystemNotification: (notification: SystemNotification) => {
-        addNotification(notification, 'system');
-      },
-      onStatusChange: (change: StatusChange) => {
-        addNotification(change, 'status');
-      },
-      onNewArticle: (article: NewArticle) => {
-        addNotification(article, 'article');
-      },
-      onConnect: () => {
-        addNotification({
-          message: 'Real-time connection established',
-          level: 'success',
-          title: 'Connected'
-        }, 'system');
-      },
-      onDisconnect: () => {
-        addNotification({
-          message: 'Real-time connection lost',
-          level: 'warning',
-          title: 'Disconnected'
-        }, 'system');
-      },
-      onError: () => {
-        addNotification({
-          message: 'Connection error occurred',
-          level: 'error',
-          title: 'Error'
-        }, 'system');
-      }
-    };
-
-    websocketService.connect(handlers);
-
-    return () => {
-      websocketService.disconnect();
-    };
+    addNotification({
+      message: 'Real-time updates temporarily disabled',
+      level: 'info',
+      title: 'Development Mode'
+    }, 'system');
   }, []);
 
   const addNotification = (
