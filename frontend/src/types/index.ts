@@ -7,4 +7,6 @@ export interface Article {
   body?: string;
   link: string;
   status?: string;
+  category?: string;
+  score?: number;
 }

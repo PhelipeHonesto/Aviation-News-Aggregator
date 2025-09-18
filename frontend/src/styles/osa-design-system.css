@@ -1,33 +1,41 @@
-/* OSA Design System 2025 - Orange Sunshine Aviation */
+/* Loud Hawk Design System 2025 - Aviation News + Community */
 
-/* Import OSA Fonts */
+/* Import Loud Hawk Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
 
-/* Coolvetica is a premium font - using a similar Swiss-style font as fallback */
+/* Velodroma is a premium font - using a similar geometric font as fallback */
 @font-face {
-  font-family: 'Coolvetica';
+  font-family: 'Velodroma';
   src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
   font-display: swap;
 }
 
-/* OSA Color Palette */
+/* Briquete for handwritten accents */
+@font-face {
+  font-family: 'Briquete';
+  src: url('https://fonts.googleapis.com/css2?family=Kalam:wght@300;400;700&display=swap');
+  font-display: swap;
+}
+
+/* Loud Hawk Color Palette */
 :root {
-  /* Primary Palette */
-  --osa-orange: #FF6B35;        /* Vibrant Orange - Energy, Innovation */
-  --osa-beige: #F5F1E8;         /* Light Beige - Clarity, Accessibility */
-  --osa-gray: #2C2C2C;          /* Dark Gray - Trust, Professionalism */
+  /* Primary Colors */
+  --loud-orange: #FF6B35;        /* Energy, movement, visibility */
+  --loud-orange-light: #FF8A65;
+  --loud-orange-dark: #E64A19;
+  --loud-purple: #8B5CF6;        /* Creativity, innovation, mystery, expansion */
+  --loud-purple-light: #A78BFA;
+  --loud-purple-dark: #7C3AED;
   
-  /* Secondary Palette */
-  --osa-purple: #8B5FBF;        /* Purple - Premium, Innovation */
-  --osa-lilac: #B8A9D9;         /* Lilac - Soft, Approachable */
-  --osa-blue: #4A90E2;          /* Light Blue - Trust, Sky */
-  --osa-yellow: #FFD700;        /* Yellow - Alertness, Energy */
+  /* Secondary Colors */
+  --loud-cream: #FEF7ED;         /* Neutrality and clarity */
+  --loud-cream-dark: #F3E8D1;
   
-  /* Neutral Palette */
-  --osa-white: #FFFFFF;
-  --osa-light-gray: #F8F9FA;
-  --osa-medium-gray: #6C757D;
-  --osa-dark-gray: #343A40;
+  /* Support Colors */
+  --loud-black: #2C2C2C;         /* Contrast, structure, legibility */
+  --loud-white: #FFFFFF;
+  --loud-gray-dark: #6C757D;
+  --loud-gray-light: #F8F9FA;
   
   /* Status Colors */
   --osa-success: #28A745;
@@ -36,8 +44,9 @@
   --osa-info: #17A2B8;
   
   /* Typography */
-  --font-primary: 'Coolvetica', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-secondary: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-accent: 'Kalam', cursive;
   
   /* Spacing Scale */
   --space-xs: 0.25rem;   /* 4px */
@@ -74,7 +83,7 @@
 body {
   font-family: var(--font-secondary);
   background: linear-gradient(135deg, var(--osa-beige) 0%, var(--osa-light-gray) 100%);
-  color: var(--osa-gray);
+  color: var(--loud-black);
   line-height: 1.6;
   margin: 0;
   padding: 0;
@@ -87,7 +96,7 @@ body {
   font-size: 3rem;
   font-weight: 800;
   line-height: 1.2;
-  color: var(--osa-orange);
+  color: var(--loud-orange);
   margin: 0;
 }
 
@@ -96,7 +105,7 @@ body {
   font-size: 2.25rem;
   font-weight: 700;
   line-height: 1.3;
-  color: var(--osa-gray);
+  color: var(--loud-black);
   margin: 0;
 }
 
@@ -105,7 +114,7 @@ body {
   font-size: 1.875rem;
   font-weight: 600;
   line-height: 1.4;
-  color: var(--osa-gray);
+  color: var(--loud-black);
   margin: 0;
 }
 
@@ -114,7 +123,7 @@ body {
   font-size: 1.5rem;
   font-weight: 600;
   line-height: 1.4;
-  color: var(--osa-gray);
+  color: var(--loud-black);
   margin: 0;
 }
 
@@ -123,7 +132,7 @@ body {
   font-size: 1.125rem;
   font-weight: 400;
   line-height: 1.6;
-  color: var(--osa-gray);
+  color: var(--loud-black);
 }
 
 .osa-body {
@@ -131,7 +140,7 @@ body {
   font-size: 1rem;
   font-weight: 400;
   line-height: 1.6;
-  color: var(--osa-gray);
+  color: var(--loud-black);
 }
 
 .osa-body-small {
@@ -139,7 +148,7 @@ body {
   font-size: 0.875rem;
   font-weight: 400;
   line-height: 1.5;
-  color: var(--osa-medium-gray);
+  color: var(--loud-gray-dark);
 }
 
 .osa-caption {
@@ -147,7 +156,7 @@ body {
   font-size: 0.75rem;
   font-weight: 500;
   line-height: 1.4;
-  color: var(--osa-medium-gray);
+  color: var(--loud-gray-dark);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
@@ -188,8 +197,8 @@ body {
 }
 
 .osa-btn-primary {
-  background: linear-gradient(135deg, var(--osa-orange) 0%, #FF8C42 100%);
-  color: var(--osa-white);
+  background: linear-gradient(135deg, var(--loud-orange) 0%, #FF8C42 100%);
+  color: var(--loud-white);
   box-shadow: var(--shadow-md);
 }
 
@@ -200,27 +209,27 @@ body {
 }
 
 .osa-btn-secondary {
-  background: var(--osa-white);
-  color: var(--osa-orange);
-  border: 2px solid var(--osa-orange);
+  background: var(--loud-white);
+  color: var(--loud-orange);
+  border: 2px solid var(--loud-orange);
 }
 
 .osa-btn-secondary:hover {
-  background: var(--osa-orange);
-  color: var(--osa-white);
+  background: var(--loud-orange);
+  color: var(--loud-white);
   transform: translateY(-2px);
   box-shadow: var(--shadow-md);
 }
 
 .osa-btn-ghost {
   background: transparent;
-  color: var(--osa-gray);
+  color: var(--loud-black);
   border: 2px solid var(--osa-gray);
 }
 
 .osa-btn-ghost:hover {
   background: var(--osa-gray);
-  color: var(--osa-white);
+  color: var(--loud-white);
 }
 
 .osa-btn-sm {
@@ -237,7 +246,7 @@ body {
 
 /* OSA Card System */
 .osa-card {
-  background: var(--osa-white);
+  background: var(--loud-white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   padding: var(--space-xl);
@@ -254,13 +263,13 @@ body {
   left: 0;
   right: 0;
   height: 4px;
-  background: linear-gradient(90deg, var(--osa-orange), var(--osa-purple), var(--osa-blue));
+  background: linear-gradient(90deg, var(--loud-orange), var(--osa-purple), var(--osa-blue));
 }
 
 .osa-card:hover {
   transform: translateY(-4px);
   box-shadow: var(--shadow-xl);
-  border-color: var(--osa-orange);
+  border-color: var(--loud-orange);
 }
 
 .osa-card-header {
@@ -273,14 +282,14 @@ body {
   font-family: var(--font-primary);
   font-size: 1.25rem;
   font-weight: 600;
-  color: var(--osa-gray);
+  color: var(--loud-black);
   margin: 0 0 var(--space-sm) 0;
 }
 
 .osa-card-subtitle {
   font-family: var(--font-secondary);
   font-size: 0.875rem;
-  color: var(--osa-medium-gray);
+  color: var(--loud-gray-dark);
   margin: 0;
 }
 
@@ -299,15 +308,15 @@ body {
 }
 
 .osa-badge-new {
-  background: rgba(108, 117, 125, 0.1);
-  color: var(--osa-medium-gray);
-  border: 1px solid var(--osa-medium-gray);
+  background: var(--loud-orange);
+  color: var(--loud-white);
+  border: 1px solid var(--loud-orange);
 }
 
 .osa-badge-selected {
   background: rgba(255, 107, 53, 0.1);
-  color: var(--osa-orange);
-  border: 1px solid var(--osa-orange);
+  color: var(--loud-orange);
+  border: 1px solid var(--loud-orange);
 }
 
 .osa-badge-edited {
@@ -394,7 +403,7 @@ body {
 
 /* OSA Navigation */
 .osa-nav {
-  background: var(--osa-white);
+  background: var(--loud-white);
   border-bottom: 1px solid var(--osa-beige);
   box-shadow: var(--shadow-sm);
   position: sticky;
@@ -406,7 +415,7 @@ body {
   font-family: var(--font-primary);
   font-size: 1.5rem;
   font-weight: 800;
-  color: var(--osa-orange);
+  color: var(--loud-orange);
   text-decoration: none;
   display: flex;
   align-items: center;
@@ -424,7 +433,7 @@ body {
 .osa-nav-link {
   font-family: var(--font-secondary);
   font-weight: 500;
-  color: var(--osa-gray);
+  color: var(--loud-black);
   text-decoration: none;
   padding: var(--space-md) var(--space-lg);
   border-radius: var(--radius-md);
@@ -433,8 +442,8 @@ body {
 
 .osa-nav-link:hover,
 .osa-nav-link.active {
-  background: var(--osa-orange);
-  color: var(--osa-white);
+  background: var(--loud-orange);
+  color: var(--loud-white);
 }
 
 /* OSA Loading States */
@@ -442,14 +451,14 @@ body {
   display: inline-flex;
   align-items: center;
   gap: var(--space-sm);
-  color: var(--osa-orange);
+  color: var(--loud-orange);
 }
 
 .osa-spinner {
   width: 20px;
   height: 20px;
   border: 2px solid var(--osa-beige);
-  border-top: 2px solid var(--osa-orange);
+  border-top: 2px solid var(--loud-orange);
   border-radius: 50%;
   animation: osa-spin 1s linear infinite;
 }
@@ -512,3 +521,272 @@ body {
 
 .osa-w-full { width: 100%; }
 .osa-h-full { height: 100%; }
+
+/* ===== SOCIAL DRAFT STYLES ===== */
+.osa-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-md);
+}
+
+.osa-modal {
+  background: var(--loud-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xl);
+  max-width: 500px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  color: var(--loud-black);
+}
+
+.osa-modal.social-draft-modal {
+  max-width: 800px;
+  max-height: 95vh;
+}
+
+.osa-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-lg);
+  border-bottom: 1px solid var(--loud-gray-light);
+}
+
+.osa-modal-body {
+  padding: var(--space-lg);
+}
+
+.osa-btn-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--loud-black);
+  cursor: pointer;
+  padding: var(--space-xs);
+  line-height: 1;
+}
+
+.osa-btn-close:hover {
+  color: var(--loud-black);
+}
+
+.osa-draft-creation {
+  text-align: center;
+  color: var(--loud-black);
+}
+
+.osa-article-preview {
+  background: var(--loud-gray-light);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  margin: var(--space-md) 0;
+  text-align: left;
+}
+
+.osa-article-preview h4 {
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--loud-black);
+}
+
+.osa-source, .osa-category {
+  margin: var(--space-xs) 0;
+  font-size: var(--font-size-sm);
+  color: var(--loud-black);
+}
+
+.osa-draft-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--loud-gray-light);
+}
+
+.osa-draft-actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.osa-status-drafted {
+  color: var(--loud-orange);
+  font-weight: 600;
+}
+
+.osa-status-approved {
+  color: var(--osa-green);
+  font-weight: 600;
+}
+
+.osa-status-posted {
+  color: var(--osa-blue);
+  font-weight: 600;
+}
+
+.osa-draft-section {
+  margin-bottom: var(--space-lg);
+}
+
+.osa-draft-section p {
+  color: var(--loud-black);
+  margin: 0;
+}
+
+.osa-draft-section h4 {
+  margin: 0 0 var(--space-sm) 0;
+  color: var(--loud-black);
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.osa-hook {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--loud-orange);
+  margin: 0;
+  padding: var(--space-sm);
+  background: var(--loud-gray-light);
+  border-radius: var(--radius-md);
+}
+
+.osa-bullets {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.osa-bullets li {
+  padding: var(--space-sm);
+  margin: var(--space-xs) 0;
+  background: var(--loud-gray-light);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--loud-orange);
+  color: var(--loud-black);
+}
+
+.osa-caption-container {
+  position: relative;
+}
+
+.osa-caption {
+  background: var(--loud-gray-light);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  white-space: pre-wrap;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-sm) 0;
+  max-height: 200px;
+  overflow-y: auto;
+  color: var(--loud-black);
+}
+
+.osa-btn-small {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--font-size-sm);
+}
+
+.osa-alt-text {
+  background: var(--loud-gray-light);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  font-style: italic;
+  color: var(--loud-black);
+  margin: 0;
+}
+
+.osa-attribution {
+  background: var(--loud-gray-light);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  font-weight: 500;
+  margin: 0;
+}
+
+.osa-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.osa-tag {
+  background: var(--loud-orange);
+  color: var(--loud-white);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+}
+
+.osa-draft-editor {
+  background: var(--loud-gray-light);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+  color: var(--loud-black);
+}
+
+.osa-form-group {
+  margin-bottom: var(--space-md);
+}
+
+.osa-form-group label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-weight: 500;
+  color: var(--loud-black);
+}
+
+.osa-input, .osa-textarea {
+  width: 100%;
+  padding: var(--space-sm);
+  border: 1px solid var(--loud-gray-light);
+  border-radius: var(--radius-md);
+  font-family: var(--font-secondary);
+  font-size: var(--font-size-sm);
+  background: var(--loud-white);
+  color: var(--loud-black);
+}
+
+.osa-input:focus, .osa-textarea:focus {
+  outline: none;
+  border-color: var(--loud-orange);
+  box-shadow: 0 0 0 2px rgba(255, 102, 0, 0.2);
+}
+
+.osa-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.osa-form-actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+  margin-top: var(--space-lg);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--loud-gray-light);
+}
+
+.osa-error-message {
+  background: var(--osa-red);
+  color: var(--loud-white);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+  font-size: var(--font-size-sm);
+}
+
+.osa-loading {
+  text-align: center;
+  padding: var(--space-lg);
+  color: var(--loud-black);
+}

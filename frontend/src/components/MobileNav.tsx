@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import OSALogo from './OSALogo';
+import LoudHawkLogo from './LoudHawkLogo';
 import './MobileNav.css';
 
 const MobileNav = () => {
@@ -27,8 +27,8 @@ const MobileNav = () => {
       {/* Mobile Header */}
       <div className="mobile-header">
         <div className="mobile-logo">
-          <OSALogo size="small" variant="icon" color="orange" />
-          <span>OsaCurator</span>
+          <LoudHawkLogo size="small" variant="icon" color="orange" />
+          <span>Loud Hawk News</span>
         </div>
         <button className="mobile-menu-toggle" onClick={toggleMenu}>
           <span className={`hamburger ${isOpen ? 'open' : ''}`}></span>
@@ -40,7 +40,7 @@ const MobileNav = () => {
         <div className="mobile-menu" onClick={(e) => e.stopPropagation()}>
           <div className="mobile-menu-header">
             <div className="mobile-menu-logo">
-              <OSALogo size="medium" variant="text" color="orange" />
+              <LoudHawkLogo size="medium" variant="text" color="orange" />
             </div>
             <button className="mobile-menu-close" onClick={closeMenu}>
               ×

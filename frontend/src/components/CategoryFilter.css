@@ -1,0 +1,87 @@
+/* Category Filter Styles */
+.category-filter {
+  margin-bottom: var(--space-lg);
+}
+
+.category-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.category-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md);
+  border: 2px solid var(--osa-extra-light-gray);
+  border-radius: var(--radius-full);
+  background: var(--loud-white);
+  color: var(--loud-black);
+  font-family: var(--font-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  white-space: nowrap;
+}
+
+.category-chip:hover {
+  border-color: var(--category-color);
+  color: var(--category-color);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.category-chip.active {
+  background: var(--category-color);
+  border-color: var(--category-color);
+  color: var(--loud-white);
+  font-weight: 600;
+  box-shadow: var(--shadow-md);
+}
+
+.category-chip.active:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.category-icon {
+  font-size: 1em;
+  line-height: 1;
+}
+
+.category-label {
+  font-size: 0.9em;
+  letter-spacing: 0.02em;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+  .category-chips {
+    gap: var(--space-xs);
+  }
+  
+  .category-chip {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--text-xs);
+  }
+  
+  .category-label {
+    font-size: 0.85em;
+  }
+}
+
+/* Dark mode support (if needed later) */
+@media (prefers-color-scheme: dark) {
+  .category-chip {
+    background: var(--loud-black);
+    border-color: var(--loud-gray-dark);
+    color: var(--loud-gray-dark);
+  }
+  
+  .category-chip:hover {
+    background: var(--loud-gray-dark);
+  }
+}

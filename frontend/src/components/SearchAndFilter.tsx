@@ -15,6 +15,7 @@ export interface FilterOptions {
 
 interface SearchAndFilterProps {
   onFilterChange: (filters: FilterOptions) => void;
+  onSearchChange?: (query: string) => void;
   availableSources: string[];
   totalArticles: number;
   filteredCount: number;
@@ -22,6 +23,7 @@ interface SearchAndFilterProps {
 
 const SearchAndFilter = ({ 
   onFilterChange, 
+  onSearchChange,
   availableSources, 
   totalArticles, 
   filteredCount 
@@ -116,7 +118,10 @@ const SearchAndFilter = ({
             type="text"
             placeholder="Search articles by title, content, or source..."
             value={filters.search}
-            onChange={(e) => updateFilters({ search: e.target.value })}
+            onChange={(e) => {
+              updateFilters({ search: e.target.value });
+              onSearchChange?.(e.target.value);
+            }}
             className="search-input"
           />
           {filters.search && (

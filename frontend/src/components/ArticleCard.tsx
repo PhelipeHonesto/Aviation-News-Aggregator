@@ -3,8 +3,9 @@ import ReactMarkdown from 'react-markdown';
 import LoadingSpinner from './LoadingSpinner';
 import SwipeableCard from './SwipeableCard';
 import ArticleStatusBadge from './ArticleStatusBadge';
+import SourceBadge from './SourceBadge';
 
-type ActionType = 'select' | 'edit' | 'export';
+type ActionType = 'select' | 'edit' | 'export' | 'social-draft';
 
 interface ArticleCardProps {
     article: Article;
@@ -93,22 +94,39 @@ const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
                             {formattedDate}
                         </div>
                     </div>
-                    <div className="osa-caption" style={{ color: 'var(--osa-orange)' }}>
-                        {article.source}
-                    </div>
+                    <SourceBadge 
+                        source={article.source} 
+                        className="compact"
+                    />
                 </div>
 
                 {/* OSA Card Content */}
                 <div style={{ flex: 1, marginBottom: 'var(--space-lg)' }}>
-                    <h3 className="osa-heading-4 osa-mb-3" style={{ 
-                        display: '-webkit-box',
-                        WebkitLineClamp: 3,
-                        WebkitBoxOrient: 'vertical',
-                        overflow: 'hidden',
-                        lineHeight: '1.4'
-                    }}>
-                        {article.title}
-                    </h3>
+                    <div className="osa-flex-between osa-mb-2">
+                        <h3 className="osa-heading-4" style={{ 
+                            display: '-webkit-box',
+                            WebkitLineClamp: 3,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden',
+                            lineHeight: '1.4',
+                            flex: 1,
+                            margin: 0
+                        }}>
+                            {article.title}
+                        </h3>
+                        {article.category && (
+                            <span className="osa-badge" style={{
+                                backgroundColor: 'var(--loud-orange)',
+                                color: 'var(--loud-white)',
+                                fontSize: '0.7rem',
+                                padding: '2px 8px',
+                                marginLeft: 'var(--space-sm)',
+                                flexShrink: 0
+                            }}>
+                                {article.category}
+                            </span>
+                        )}
+                    </div>
                     
                     {/* Markdown Preview */}
                     <div className="osa-body" style={{ 
@@ -116,7 +134,7 @@ const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
                         WebkitLineClamp: 4,
                         WebkitBoxOrient: 'vertical',
                         overflow: 'hidden',
-                        color: 'var(--osa-medium-gray)'
+                        color: 'var(--loud-black)'
                     }}>
                         <ReactMarkdown>
                             {article.body || article.summary || 'No content available'}
@@ -182,6 +200,23 @@ const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
                                     </div>
                                 ) : (
                                     'Export'
+                                )}
+                            </button>
+                        )}
+                        
+                        {(article.status === 'new' || article.status === 'selected' || article.status === 'edited') && (
+                            <button 
+                                onClick={() => onAction('social-draft', article.id)} 
+                                disabled={isLoading}
+                                className="osa-btn osa-btn-accent osa-btn-sm"
+                                style={{ backgroundColor: 'var(--loud-orange)', color: 'var(--loud-white)' }}
+                            >
+                                {isLoading ? (
+                                    <div className="osa-loading">
+                                        <div className="osa-spinner"></div>
+                                    </div>
+                                ) : (
+                                    '📱 Social'
                                 )}
                             </button>
                         )}

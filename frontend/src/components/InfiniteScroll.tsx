@@ -1,79 +1,78 @@
-import { useEffect, useRef, useCallback, useState } from 'react';
+import React, { useEffect, useRef, useCallback } from 'react';
 import './InfiniteScroll.css';
 
 interface InfiniteScrollProps {
-  children: React.ReactNode;
-  onLoadMore: () => Promise<void>;
   hasMore: boolean;
   isLoading: boolean;
-  threshold?: number; // Distance from bottom to trigger load (in pixels)
-  rootMargin?: string; // CSS margin for intersection observer
+  onLoadMore: () => void;
+  threshold?: number;
+  children: React.ReactNode;
+  className?: string;
 }
 
-const InfiniteScroll = ({
-  children,
-  onLoadMore,
+const InfiniteScroll: React.FC<InfiniteScrollProps> = ({
   hasMore,
   isLoading,
-  threshold = 100,
-  rootMargin = '0px'
-}: InfiniteScrollProps) => {
-  const [observerTarget, setObserverTarget] = useState<HTMLDivElement | null>(null);
-  const loadingRef = useRef<HTMLDivElement>(null);
+  onLoadMore,
+  threshold = 200,
+  children,
+  className = ''
+}) => {
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  const handleIntersection = useCallback(
-    (entries: IntersectionObserverEntry[]) => {
-      const [entry] = entries;
-      
-      if (entry.isIntersecting && hasMore && !isLoading) {
-        onLoadMore();
-      }
-    },
-    [hasMore, isLoading, onLoadMore]
-  );
+  const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
+    const [entry] = entries;
+    if (entry.isIntersecting && hasMore && !isLoading) {
+      onLoadMore();
+    }
+  }, [hasMore, isLoading, onLoadMore]);
 
   useEffect(() => {
-    if (!observerTarget) return;
+    if (observerRef.current) {
+      observerRef.current.disconnect();
+    }
 
-    const observer = new IntersectionObserver(handleIntersection, {
-      rootMargin: `${threshold}px ${rootMargin}`,
+    observerRef.current = new IntersectionObserver(handleIntersection, {
+      root: null,
+      rootMargin: `${threshold}px`,
       threshold: 0.1
     });
 
-    observer.observe(observerTarget);
+    if (sentinelRef.current) {
+      observerRef.current.observe(sentinelRef.current);
+    }
 
     return () => {
-      observer.disconnect();
+      if (observerRef.current) {
+        observerRef.current.disconnect();
+      }
     };
-  }, [observerTarget, handleIntersection, threshold, rootMargin]);
+  }, [handleIntersection, threshold]);
 
   return (
-    <div className="infinite-scroll-container">
+    <div className={`infinite-scroll ${className}`}>
       {children}
       
-      {/* Observer target for intersection detection */}
-      <div
-        ref={setObserverTarget}
-        className="infinite-scroll-observer"
-        style={{ height: '1px' }}
-      />
-      
-      {/* Loading indicator */}
-      {isLoading && (
-        <div ref={loadingRef} className="infinite-scroll-loading">
-          <div className="loading-spinner"></div>
-          <span>Loading more articles...</span>
-        </div>
-      )}
-      
-      {/* End of content indicator */}
-      {!hasMore && !isLoading && (
-        <div className="infinite-scroll-end">
-          <span>You've reached the end! 🎉</span>
-        </div>
-      )}
+      {/* Sentinel element for intersection observer */}
+      <div ref={sentinelRef} className="infinite-scroll-sentinel">
+        {isLoading && hasMore && (
+          <div className="infinite-scroll-loading">
+            <div className="osa-loading">
+              <div className="osa-spinner"></div>
+              <span>Loading more articles...</span>
+            </div>
+          </div>
+        )}
+        
+        {!hasMore && (
+          <div className="infinite-scroll-end">
+            <p className="osa-caption">You've reached the end of the feed</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
 
-export default InfiniteScroll; 
+export default InfiniteScroll;

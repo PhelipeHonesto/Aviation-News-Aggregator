@@ -1,6 +1,6 @@
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import MobileNav from './MobileNav';
-import OSALogo from './OSALogo';
+import LoudHawkLogo from './LoudHawkLogo';
 
 const Layout = () => {
   const location = useLocation();
@@ -14,9 +14,9 @@ const Layout = () => {
       <nav className="osa-nav">
         <div className="osa-container osa-flex-between" style={{ padding: 'var(--space-lg) var(--space-lg)' }}>
           <Link to="/" style={{ textDecoration: 'none' }}>
-            <OSALogo 
+            <LoudHawkLogo 
               size="medium" 
-              variant="full" 
+              variant="news" 
               color="orange"
               className="osa-nav-brand"
             />
@@ -45,6 +45,14 @@ const Layout = () => {
                 className={`osa-nav-link ${location.pathname === '/drafts' ? 'active' : ''}`}
               >
                 📝 Drafts
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/factory" 
+                className={`osa-nav-link ${location.pathname === '/factory' ? 'active' : ''}`}
+              >
+                🏭 Content Factory
               </Link>
             </li>
             <li>
