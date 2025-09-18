@@ -34,9 +34,7 @@ const Settings = () => {
   const loadStats = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/stats');
-      if (!response.ok) throw new Error('Failed to fetch stats');
-      const data = await response.json();
+      const data: Stats = await api.getStats();
       setStats(data);
     } catch (error) {
       console.error('Error loading stats:', error);
