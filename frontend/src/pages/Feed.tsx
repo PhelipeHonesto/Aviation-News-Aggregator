@@ -74,26 +74,13 @@ const Feed = () => {
   const loadNews = useCallback(async () => {
     setActingArticleId('loading_feed');
     try {
-      // Try proxy first
-      let response = await fetch("/api/news");
-      if (!response.ok) throw new Error("Proxy fetch failed");
-      let data = await response.json();
+      const data = await api.getNews();
       if (!Array.isArray(data)) throw new Error("Response is not an array");
       setArticles(data);
-      console.log("Fetched news from /api/news:", data);
-    } catch (proxyErr) {
-      try {
-        // Fallback to direct backend fetch
-        let response = await fetch("http://localhost:8000/news");
-        if (!response.ok) throw new Error("Direct fetch failed");
-        let data = await response.json();
-        if (!Array.isArray(data)) throw new Error("Response is not an array");
-        setArticles(data);
-        console.log("Fetched news from backend:", data);
-      } catch (err) {
-        console.error("Error fetching news:", err);
-        showErrorToast(err, 'loading news');
-      }
+      console.log("Fetched news:", data);
+    } catch (err) {
+      console.error("Error fetching news:", err);
+      showErrorToast(err, 'loading news');
     } finally {
       setActingArticleId(null);
     }
