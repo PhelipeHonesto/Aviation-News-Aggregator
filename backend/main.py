@@ -14,8 +14,8 @@ from agents.aviation_pages_reader import SkyWestAgent
 from agents.institutional_reader import InstitutionalReaderAgent
 from agents.groundnews_agent import GroundNewsAgent
 from services.scheduler import scheduler
-from services.slack_client import post_article_to_slack, format_slack_message
-from services.openai_client import rewrite_article
+# Slack integration removed for simplification
+# OpenAI integration removed for simplification
 
 # Load environment variables
 load_dotenv()
@@ -30,9 +30,14 @@ app = FastAPI(title="OsaCurator API", version="1.0.0")
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, restrict this to your frontend URL
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173", 
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173"
+    ],  # Restrict to specific frontend URLs
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -58,10 +63,31 @@ async def root():
     return {"message": "OsaCurator API is running", "status": "healthy"}
 
 @app.get("/news", response_model=List[ArticleSchema])
-async def get_news():
-    """Get all news articles from the database."""
+async def get_news(status: Optional[str] = None, source: Optional[str] = None):
     try:
         articles = get_all_news()
+        
+        # Filter by status if provided
+        if status:
+            articles = [a for a in articles if a.status == status]
+        
+        # Filter by source if provided
+        if source:
+            articles = [a for a in articles if a.source == source]
+        
+        if not articles:
+            # Return a dummy article if DB is empty
+            return [ArticleSchema(
+                id="dummy-article",
+                title="Welcome to Orange Sunshine Aviation",
+                summary="Your news feed is live! Ingest news to see real articles.",
+                source="system",
+                published_at=datetime.now(),
+                body="This is a demo article. Use the ingest button to fetch real news.",
+                link="#",
+                status="info"
+            )]
+        
         # Convert to schema format
         article_schemas = []
         for article in articles:
@@ -176,45 +202,30 @@ async def select_story(story_id: str):
 
 @app.post("/edit/{story_id}")
 async def edit_story(story_id: str):
-    """Edit a story using AI."""
+    """Mark a story as edited (simplified version)."""
     try:
         article = find_news_by_id(story_id)
         if not article:
             raise HTTPException(status_code=404, detail="Article not found")
         
-        # Use OpenAI to edit the story
-        try:
-            openai_api_key = os.getenv("OPENAI_API_KEY")
-            if not openai_api_key:
-                raise HTTPException(status_code=500, detail="OpenAI API key not configured")
-            
-            edited_content = rewrite_article(article.title, article.body or "", openai_api_key)
-            if edited_content:
-                # Update the article with edited content
-                article.body = edited_content
-                article.status = "edited"
-                save_all_news([{
-                    "id": article.id,
-                    "title": article.title,
-                    "summary": article.summary,
-                    "source": article.source,
-                    "published_at": article.published_at,
-                    "body": edited_content,
-                    "link": article.link,
-                    "status": "edited"
-                }])
-                
-                return {
-                    "message": "Story edited successfully",
-                    "story_id": story_id,
-                    "status": "edited"
-                }
-            else:
-                raise HTTPException(status_code=500, detail="Failed to edit story with AI")
-                
-        except Exception as e:
-            logger.error(f"Error editing story with AI: {e}")
-            raise HTTPException(status_code=500, detail="Failed to edit story with AI")
+        # Simply mark as edited - no AI processing
+        article.status = "edited"
+        save_all_news([{
+            "id": article.id,
+            "title": article.title,
+            "summary": article.summary,
+            "source": article.source,
+            "published_at": article.published_at,
+            "body": article.body,
+            "link": article.link,
+            "status": "edited"
+        }])
+        
+        return {
+            "message": "Story marked as edited",
+            "story_id": story_id,
+            "status": "edited"
+        }
         
     except HTTPException:
         raise
@@ -222,53 +233,86 @@ async def edit_story(story_id: str):
         logger.error(f"Error editing story {story_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to edit story")
 
-@app.post("/slack/{story_id}")
-async def post_to_slack(story_id: str):
-    """Post a story to Slack."""
+@app.post("/export/{story_id}")
+async def export_story(story_id: str):
+    """Export a story as markdown text."""
     try:
         article = find_news_by_id(story_id)
         if not article:
             raise HTTPException(status_code=404, detail="Article not found")
         
-        # Post to Slack
-        try:
-            slack_webhook_url = os.getenv("SLACK_WEBHOOK_URL")
-            if not slack_webhook_url:
-                raise HTTPException(status_code=500, detail="Slack webhook URL not configured")
-            
-            post_article_to_slack(article, slack_webhook_url)
-            success = True
-            if success:
-                # Update status to posted
-                article.status = "posted"
-                save_all_news([{
-                    "id": article.id,
-                    "title": article.title,
-                    "summary": article.summary,
-                    "source": article.source,
-                    "published_at": article.published_at,
-                    "body": article.body,
-                    "link": article.link,
-                    "status": "posted"
-                }])
-                
-                return {
-                    "message": "Story posted to Slack successfully",
-                    "story_id": story_id,
-                    "status": "posted"
-                }
-            else:
-                raise HTTPException(status_code=500, detail="Failed to post to Slack")
-                
-        except Exception as e:
-            logger.error(f"Error posting to Slack: {e}")
-            raise HTTPException(status_code=500, detail="Failed to post to Slack")
+        # Create markdown content
+        markdown_content = f"""# {article.title}
+
+**Source:** {article.source}  
+**Published:** {article.published_at.strftime('%Y-%m-%d %H:%M') if article.published_at else 'Unknown'}  
+**Status:** {article.status}  
+**Link:** {article.link}
+
+## Summary
+{article.summary or 'No summary available'}
+
+## Content
+{article.body or 'No content available'}
+
+---
+*Exported from OsaCurator on {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}*
+"""
+        
+        # Update status to exported
+        article.status = "exported"
+        save_all_news([{
+            "id": article.id,
+            "title": article.title,
+            "summary": article.summary,
+            "source": article.source,
+            "published_at": article.published_at,
+            "body": article.body,
+            "link": article.link,
+            "status": "exported"
+        }])
+        
+        return {
+            "message": "Story exported successfully",
+            "story_id": story_id,
+            "status": "exported",
+            "content": markdown_content
+        }
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Error posting story {story_id} to Slack: {e}")
-        raise HTTPException(status_code=500, detail="Failed to post to Slack")
+        logger.error(f"Error exporting story {story_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to export story")
+
+@app.get("/stats")
+async def get_stats():
+    """Get statistics about articles."""
+    try:
+        articles = get_all_news()
+        
+        # Count articles by status
+        status_counts = {}
+        source_counts = {}
+        
+        for article in articles:
+            # Count by status
+            status = article.status or 'new'
+            status_counts[status] = status_counts.get(status, 0) + 1
+            
+            # Count by source
+            source = article.source or 'unknown'
+            source_counts[source] = source_counts.get(source, 0) + 1
+        
+        return {
+            "total_articles": len(articles),
+            "status_breakdown": status_counts,
+            "source_breakdown": source_counts,
+            "last_updated": datetime.now().isoformat()
+        }
+    except Exception as e:
+        logger.error(f"Error getting stats: {e}")
+        raise HTTPException(status_code=500, detail="Failed to get statistics")
 
 @app.get("/health")
 async def health_check():

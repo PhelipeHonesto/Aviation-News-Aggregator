@@ -1,28 +1,81 @@
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import MobileNav from './MobileNav';
+import OSALogo from './OSALogo';
 
 const Layout = () => {
+  const location = useLocation();
+
   return (
-    <div className="app-container">
+    <div className="osa-diamond-bg" style={{ minHeight: '100vh' }}>
       {/* Mobile Navigation */}
       <MobileNav />
       
-      {/* Desktop Navigation */}
-      <nav className="main-nav">
-        <div className="nav-logo">
-          <img src="/logo.jpeg" alt="Orange Sunshine Aviation Logo" />
-          <span>Orange Sunshine Aviation</span>
+      {/* OSA Desktop Navigation */}
+      <nav className="osa-nav">
+        <div className="osa-container osa-flex-between" style={{ padding: 'var(--space-lg) var(--space-lg)' }}>
+          <Link to="/" style={{ textDecoration: 'none' }}>
+            <OSALogo 
+              size="medium" 
+              variant="full" 
+              color="orange"
+              className="osa-nav-brand"
+            />
+          </Link>
+          
+          <ul className="osa-nav-links">
+            <li>
+              <Link 
+                to="/" 
+                className={`osa-nav-link ${location.pathname === '/' ? 'active' : ''}`}
+              >
+                📰 Feed
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/saved" 
+                className={`osa-nav-link ${location.pathname === '/saved' ? 'active' : ''}`}
+              >
+                💾 Saved
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/drafts" 
+                className={`osa-nav-link ${location.pathname === '/drafts' ? 'active' : ''}`}
+              >
+                📝 Drafts
+              </Link>
+            </li>
+            <li>
+              <Link 
+                to="/settings" 
+                className={`osa-nav-link ${location.pathname === '/settings' ? 'active' : ''}`}
+              >
+                ⚙️ Settings
+              </Link>
+            </li>
+          </ul>
         </div>
-        <ul>
-          <li><Link to="/">Feed</Link></li>
-          <li><Link to="/saved">Saved</Link></li>
-          <li><Link to="/drafts">Drafts</Link></li>
-          <li><Link to="/settings">Settings</Link></li>
-        </ul>
       </nav>
-      <main className="content-area">
+      
+      <main style={{ flex: 1, padding: 'var(--space-xl) 0' }}>
         <Outlet />
       </main>
+      
+      {/* OSA Footer */}
+      <footer style={{ 
+        background: 'var(--osa-gray)', 
+        color: 'var(--osa-white)', 
+        padding: 'var(--space-xl) 0',
+        marginTop: 'auto'
+      }}>
+        <div className="osa-container osa-text-center">
+          <p className="osa-body-small" style={{ color: 'var(--osa-beige)' }}>
+            © 2025 Orange Sunshine Aviation - Democratizing Aviation Education
+          </p>
+        </div>
+      </footer>
     </div>
   );
 };

@@ -31,7 +31,12 @@ export const editStory = async (storyId: string) => {
   return handleResponse(response);
 };
 
-export const postToSlack = async (storyId: string) => {
-  const response = await fetch(`${API_BASE_URL}/slack/${storyId}`, { method: 'POST' });
+export const exportStory = async (storyId: string) => {
+  const response = await fetch(`${API_BASE_URL}/export/${storyId}`, { method: 'POST' });
+  return handleResponse(response);
+};
+
+export const getStats = async () => {
+  const response = await fetch(`${API_BASE_URL}/stats`);
   return handleResponse(response);
 };

@@ -2,8 +2,9 @@ import type { Article } from '../types';
 import ReactMarkdown from 'react-markdown';
 import LoadingSpinner from './LoadingSpinner';
 import SwipeableCard from './SwipeableCard';
+import ArticleStatusBadge from './ArticleStatusBadge';
 
-type ActionType = 'select' | 'edit' | 'post';
+type ActionType = 'select' | 'edit' | 'export';
 
 interface ArticleCardProps {
     article: Article;
@@ -12,26 +13,6 @@ interface ArticleCardProps {
 }
 
 const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
-    const getStatusTag = (status: string) => {
-        switch (status) {
-            case 'selected':
-                return { text: '🟡 SELECTED', color: '#f17500' };
-            case 'edited':
-                return { text: '🟢 EDITED', color: '#0a4bb6' };
-            case 'posted':
-                return { text: '🔵 POSTED', color: '#28a745' };
-            case 'skipped':
-                return { text: '🔴 SKIPPED', color: '#d32f2f' };
-            case 'draft':
-                return { text: '🟡 DRAFT', color: '#fbc02d' };
-            case 'ready':
-                return { text: '🟢 READY', color: '#388e3c' };
-            default:
-                return { text: 'NEW', color: '#6c757d' };
-        }
-    };
-
-    const statusTag = getStatusTag(article.status || '');
     const formattedDate = article.published_at
         ? new Date(article.published_at).toLocaleDateString('en-US', {
             month: 'short',
@@ -58,11 +39,11 @@ const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
             case 'edited':
                 return {
                     leftAction: { label: 'Re-edit', color: '#0a4bb6' },
-                    rightAction: { label: 'Post', color: '#28a745' }
+                    rightAction: { label: 'Export', color: '#28a745' }
                 };
-            case 'posted':
+            case 'exported':
                 return {
-                    leftAction: { label: 'Rewrite', color: '#6c757d' },
+                    leftAction: { label: 'Re-edit', color: '#6c757d' },
                     rightAction: undefined
                 };
             default:
@@ -92,7 +73,7 @@ const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
 
     const handleSwipeRight = () => {
         if (isLoading || article.status !== 'edited') return;
-        onAction('post', article.id);
+        onAction('export', article.id);
     };
 
     return (
@@ -103,140 +84,123 @@ const ArticleCard = ({ article, onAction, isLoading }: ArticleCardProps) => {
             rightAction={rightAction}
             disabled={isLoading}
         >
-            <div className="article-card">
-                {/* Top Section */}
-                <div className="card-top">
-                    <div className="tag-chip" style={{ backgroundColor: statusTag.color }}>
-                        {statusTag.text}
+            <div className="osa-card" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                {/* OSA Card Header */}
+                <div className="osa-card-header">
+                    <div className="osa-flex-between osa-mb-2">
+                        <ArticleStatusBadge status={article.status || 'new'} />
+                        <div className="osa-caption">
+                            {formattedDate}
+                        </div>
                     </div>
-                    <div className="date-source">
-                        <span className="date">{formattedDate}</span>
-                        <span className="source">{article.source}</span>
+                    <div className="osa-caption" style={{ color: 'var(--osa-orange)' }}>
+                        {article.source}
                     </div>
                 </div>
 
-                {/* Middle Section */}
-                <div className="card-middle">
-                    <h2 className="article-title">{article.title}</h2>
+                {/* OSA Card Content */}
+                <div style={{ flex: 1, marginBottom: 'var(--space-lg)' }}>
+                    <h3 className="osa-heading-4 osa-mb-3" style={{ 
+                        display: '-webkit-box',
+                        WebkitLineClamp: 3,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        lineHeight: '1.4'
+                    }}>
+                        {article.title}
+                    </h3>
+                    
                     {/* Markdown Preview */}
-                    <div className="markdown-preview">
+                    <div className="osa-body" style={{ 
+                        display: '-webkit-box',
+                        WebkitLineClamp: 4,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                        color: 'var(--osa-medium-gray)'
+                    }}>
                         <ReactMarkdown>
-                            {article.body || ''}
+                            {article.body || article.summary || 'No content available'}
                         </ReactMarkdown>
                     </div>
                 </div>
 
-                {/* Bottom Section */}
-                <div className="card-bottom">
-                    <div className="card-actions">
-                        <a 
-                            href={article.link} 
-                            target="_blank" 
-                            rel="noopener noreferrer"
-                            className="read-more-btn"
-                        >
-                            🔗 Read More
-                        </a>
+                {/* OSA Card Actions */}
+                <div className="osa-flex-between" style={{ marginTop: 'auto' }}>
+                    <a 
+                        href={article.link} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="osa-btn osa-btn-ghost osa-btn-sm"
+                        style={{ textDecoration: 'none' }}
+                    >
+                        🔗 Read More
+                    </a>
+                    
+                    <div className="osa-flex" style={{ gap: 'var(--space-sm)' }}>
+                        {/* Action Buttons */}
+                        {article.status === 'new' && (
+                            <button 
+                                onClick={() => onAction('select', article.id)}
+                                disabled={isLoading}
+                                className="osa-btn osa-btn-primary osa-btn-sm"
+                            >
+                                {isLoading ? (
+                                    <div className="osa-loading">
+                                        <div className="osa-spinner"></div>
+                                    </div>
+                                ) : (
+                                    'Select'
+                                )}
+                            </button>
+                        )}
                         
-                        <div className="action-buttons">
-                            {/* AI Suggestion Button */}
-                            {(article.status === 'selected' || article.status === 'edited') && (
-                                <button
-                                    onClick={() => onAction('edit', article.id)}
-                                    disabled={isLoading}
-                                    className={`action-btn ai-btn ${isLoading ? 'loading' : ''}`}
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <LoadingSpinner size="small" color="white" />
-                                            <span style={{ marginLeft: '8px' }}>AI Rewriting...</span>
-                                        </>
-                                    ) : (
-                                        'Rewrite in Loud Hawk voice'
-                                    )}
-                                </button>
-                            )}
-                            {article.status === 'new' && (
-                                <button 
-                                    onClick={() => onAction('select', article.id)}
-                                    disabled={isLoading}
-                                    className={`action-btn select-btn ${isLoading ? 'loading' : ''}`}
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <LoadingSpinner size="small" color="white" />
-                                            <span style={{ marginLeft: '8px' }}>Selecting...</span>
-                                        </>
-                                    ) : (
-                                        'Select Story'
-                                    )}
-                                </button>
-                            )}
-                            {article.status === 'selected' && (
-                                <button 
-                                    onClick={() => onAction('edit', article.id)} 
-                                    disabled={isLoading}
-                                    className={`action-btn edit-btn ${isLoading ? 'loading' : ''}`}
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <LoadingSpinner size="small" color="white" />
-                                            <span style={{ marginLeft: '8px' }}>Editing...</span>
-                                        </>
-                                    ) : (
-                                        'Edit with AI'
-                                    )}
-                                </button>
-                            )}
-                            {article.status === 'edited' && (
-                                <>
-                                    <button 
-                                        onClick={() => onAction('edit', article.id)} 
-                                        disabled={isLoading}
-                                        className={`action-btn reedit-btn ${isLoading ? 'loading' : ''}`}
-                                    >
-                                        {isLoading ? (
-                                            <>
-                                                <LoadingSpinner size="small" color="white" />
-                                                <span style={{ marginLeft: '8px' }}>Editing...</span>
-                                            </>
-                                        ) : (
-                                            'Re-edit'
-                                        )}
-                                    </button>
-                                    <button 
-                                        onClick={() => onAction('post', article.id)} 
-                                        disabled={isLoading}
-                                        className={`action-btn post-btn ${isLoading ? 'loading' : ''}`}
-                                    >
-                                        {isLoading ? (
-                                            <>
-                                                <LoadingSpinner size="small" color="white" />
-                                                <span style={{ marginLeft: '8px' }}>Posting...</span>
-                                            </>
-                                        ) : (
-                                            'Post to Slack'
-                                        )}
-                                    </button>
-                                </>
-                            )}
-                            {article.status === 'posted' && (
-                                <button 
-                                    onClick={() => onAction('select', article.id)} 
-                                    disabled={isLoading}
-                                    className={`action-btn rewrite-btn ${isLoading ? 'loading' : ''}`}
-                                >
-                                    {isLoading ? (
-                                        <>
-                                            <LoadingSpinner size="small" color="white" />
-                                            <span style={{ marginLeft: '8px' }}>Rewriting...</span>
-                                        </>
-                                    ) : (
-                                        'Rewrite Story'
-                                    )}
-                                </button>
-                            )}
-                        </div>
+                        {(article.status === 'selected' || article.status === 'edited') && (
+                            <button
+                                onClick={() => onAction('edit', article.id)}
+                                disabled={isLoading}
+                                className="osa-btn osa-btn-secondary osa-btn-sm"
+                            >
+                                {isLoading ? (
+                                    <div className="osa-loading">
+                                        <div className="osa-spinner"></div>
+                                    </div>
+                                ) : (
+                                    'Edit'
+                                )}
+                            </button>
+                        )}
+                        
+                        {article.status === 'edited' && (
+                            <button 
+                                onClick={() => onAction('export', article.id)} 
+                                disabled={isLoading}
+                                className="osa-btn osa-btn-primary osa-btn-sm"
+                            >
+                                {isLoading ? (
+                                    <div className="osa-loading">
+                                        <div className="osa-spinner"></div>
+                                    </div>
+                                ) : (
+                                    'Export'
+                                )}
+                            </button>
+                        )}
+                        
+                        {article.status === 'exported' && (
+                            <button 
+                                onClick={() => onAction('select', article.id)} 
+                                disabled={isLoading}
+                                className="osa-btn osa-btn-ghost osa-btn-sm"
+                            >
+                                {isLoading ? (
+                                    <div className="osa-loading">
+                                        <div className="osa-spinner"></div>
+                                    </div>
+                                ) : (
+                                    'Re-select'
+                                )}
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

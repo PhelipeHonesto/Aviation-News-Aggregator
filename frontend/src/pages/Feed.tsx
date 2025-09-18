@@ -15,7 +15,6 @@ import { retry } from '../utils/retry';
 import { getUniqueSources } from '../utils/filterUtils';
 import type { Article } from '../types';
 import type { ErrorInfo } from '../utils/errorHandler';
-import './Feed.css';
 
 const Feed = () => {
   // Component State
@@ -75,12 +74,26 @@ const Feed = () => {
   const loadNews = useCallback(async () => {
     setActingArticleId('loading_feed');
     try {
-      const response = await fetch("/api/news");
-      const data = await response.json();
-      console.log("Fetched news:", data);
+      // Try proxy first
+      let response = await fetch("/api/news");
+      if (!response.ok) throw new Error("Proxy fetch failed");
+      let data = await response.json();
+      if (!Array.isArray(data)) throw new Error("Response is not an array");
       setArticles(data);
-    } catch (err) {
-      showErrorToast(err, 'loading news');
+      console.log("Fetched news from /api/news:", data);
+    } catch (proxyErr) {
+      try {
+        // Fallback to direct backend fetch
+        let response = await fetch("http://localhost:8000/news");
+        if (!response.ok) throw new Error("Direct fetch failed");
+        let data = await response.json();
+        if (!Array.isArray(data)) throw new Error("Response is not an array");
+        setArticles(data);
+        console.log("Fetched news from backend:", data);
+      } catch (err) {
+        console.error("Error fetching news:", err);
+        showErrorToast(err, 'loading news');
+      }
     } finally {
       setActingArticleId(null);
     }
@@ -128,8 +141,8 @@ const Feed = () => {
   // Simple polling for updates (temporary replacement for WebSocket)
   useEffect(() => {
     const pollInterval = setInterval(() => {
-      loadNews(); // Refresh news every 30 seconds
-    }, 30000);
+      loadNews(); // Refresh news every 60 seconds
+    }, 60000); // Increased to 60 seconds to reduce server load
 
     return () => clearInterval(pollInterval);
   }, [loadNews]);
@@ -139,14 +152,14 @@ const Feed = () => {
    * @param action The type of action to perform.
    * @param storyId The ID of the target article.
    */
-  const handleAction = async (action: 'select' | 'edit' | 'post', storyId: string) => {
+  const handleAction = async (action: 'select' | 'edit' | 'export', storyId: string) => {
     setActingArticleId(storyId);
 
     // Maps action types to their respective API calls and UI messages.
     const actionMap = {
       select: { apiCall: api.selectStory, loadingMessage: 'Selecting story...' },
-      edit: { apiCall: api.editStory, loadingMessage: 'Editing with AI...' },
-      post: { apiCall: api.postToSlack, loadingMessage: 'Posting to Slack...' },
+      edit: { apiCall: api.editStory, loadingMessage: 'Marking as edited...' },
+      export: { apiCall: api.exportStory, loadingMessage: 'Exporting story...' },
     };
 
     try {
@@ -157,7 +170,23 @@ const Feed = () => {
         maxAttempts: 2,
         baseDelay: 1500
       });
-      showToast(response.message, 'success');
+      
+      // Handle export action specially
+      if (action === 'export' && response.content) {
+        // Download the exported content as a markdown file
+        const blob = new Blob([response.content], { type: 'text/markdown' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `article-${storyId}.md`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        showToast('Story exported and downloaded!', 'success');
+      } else {
+        showToast(response.message, 'success');
+      }
 
       // After a successful action, reload all news to reflect the change.
       loadNews();
@@ -185,43 +214,84 @@ const Feed = () => {
 
   // DEBUG: Log articles and pagination state
   useEffect(() => {
-    console.log('[DEBUG] Articles:', articles.length);
+    console.log('[DEBUG] Articles:', articles.length, articles);
   }, [articles]);
 
 
   return (
-    <div className="feed-page">
+    <div className="osa-container">
       <ConnectionStatus />
       <NotificationManager />
-      <SearchAndFilter
-        availableSources={availableSources}
-        totalArticles={articles.length}
-        filteredCount={articles.length}
-        onFilterChange={() => {}}
-      />
-      {isLoading('loading_feed') && articles.length === 0 ? (
-        <div className="loading-container">
-          <LoadingSpinner size="large" />
-          <p>Loading news feed...</p>
-        </div>
-      ) : (
-        <PullToRefresh onRefresh={loadNews}>
-          <div className="articles-container">
-            {articles.length > 0 ? (
-              articles.map((article: Article) => (
-                <ArticleCard
-                  key={article.id}
-                  article={article}
-                  onAction={handleAction}
-                  isLoading={isLoading(article.id)}
-                />
-              ))
-            ) : (
-              <div className="no-articles">No articles found.</div>
-            )}
+      
+      {/* OSA Header Section */}
+      <div className="osa-section" style={{ paddingTop: 'var(--space-2xl)' }}>
+        <div className="osa-flex-between osa-mb-4">
+          <div>
+            <h1 className="osa-heading-1">Aviation News</h1>
+            <p className="osa-body-large" style={{ color: 'var(--osa-medium-gray)' }}>
+              Curate the latest aviation stories with precision and purpose
+            </p>
           </div>
-        </PullToRefresh>
-      )}
+          <button 
+            onClick={handleIngestNews}
+            disabled={isLoading('ingesting')}
+            className="osa-btn osa-btn-primary osa-btn-lg"
+          >
+            {isLoading('ingesting') ? (
+              <div className="osa-loading">
+                <div className="osa-spinner"></div>
+                <span>Ingesting...</span>
+              </div>
+            ) : (
+              <>
+                🔄 Ingest News
+              </>
+            )}
+          </button>
+        </div>
+        
+        <SearchAndFilter
+          availableSources={availableSources}
+          totalArticles={articles.length}
+          filteredCount={articles.length}
+          onFilterChange={() => {}}
+        />
+      </div>
+
+      {/* Articles Section */}
+      <div className="osa-section" style={{ paddingTop: 0 }}>
+        {isLoading('loading_feed') && articles.length === 0 ? (
+          <div className="osa-flex-center" style={{ padding: 'var(--space-3xl) 0' }}>
+            <div className="osa-text-center">
+              <div className="osa-loading osa-mb-3">
+                <div className="osa-spinner" style={{ width: '40px', height: '40px' }}></div>
+              </div>
+              <p className="osa-body-large">Loading aviation news...</p>
+            </div>
+          </div>
+        ) : (
+          <PullToRefresh onRefresh={loadNews}>
+            <div className="osa-grid osa-grid-2">
+              {articles.length > 0 ? (
+                articles.map((article: Article) => (
+                  <ArticleCard
+                    key={article.id}
+                    article={article}
+                    onAction={handleAction}
+                    isLoading={isLoading(article.id)}
+                  />
+                ))
+              ) : (
+                <div className="osa-card osa-text-center" style={{ gridColumn: '1 / -1' }}>
+                  <div style={{ fontSize: '4rem', marginBottom: 'var(--space-lg)' }}>📰</div>
+                  <h3 className="osa-heading-3 osa-mb-2">No articles found</h3>
+                  <p className="osa-body">Click "Ingest News" to fetch the latest aviation stories</p>
+                </div>
+              )}
+            </div>
+          </PullToRefresh>
+        )}
+      </div>
 
       {/* Toast notifications */}
       <Toast

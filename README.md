@@ -1,15 +1,25 @@
-# OsaCurator
+# 🌞 OsaCurator
 
-OsaCurator is a full-stack news curation web application designed to gather articles from various sources, allow for AI-powered editing, and publish them to a designated Slack channel.
+**Orange Sunshine Aviation's** intelligent news curation platform designed to democratize aviation education by delivering high-quality, curated aviation news and stories.
+
+Built with the **OSA Brand Guidelines 2025** - featuring our signature vibrant orange, clean typography, and aviation-inspired design system.
 
 ## Features
 
-- **Automated News Ingestion:** Gathers articles from web pages (SkyWest News) and external APIs (Newsdata.io).
-- **Curation Workflow:** A multi-step process to select, edit, and post articles.
-- **AI-Powered Editing:** Integrates with OpenAI's GPT-4o to rewrite and refine article content.
-- **Slack Integration:** Posts curated articles directly to a Slack channel using webhooks.
-- **Modern UI:** A clean, responsive dashboard built with React and TypeScript.
-- **SQLite Storage:** Articles are persisted using SQLModel with SQLite.
+- **Automated News Ingestion:** Gathers articles from multiple sources including:
+  - Newsdata.io API for aviation news
+  - SkyWest News press releases
+  - GroundNews aviation content
+  - Institutional sources (FAA, ICAO, IATA)
+- **Curation Workflow:** A simple multi-step process to select, edit, and export articles with status tracking
+- **Export Functionality:** Export curated articles as markdown files for easy sharing and publishing
+- **OSA Brand Design:** Built with Orange Sunshine Aviation's 2025 brand guidelines
+- **Modern UI:** Clean, responsive dashboard with Swiss design principles and aviation aesthetics
+- **Real-time Updates:** WebSocket support for live updates and notifications
+- **Analytics Dashboard:** Track article counts, status breakdowns, and source performance
+- **Mobile-First Design:** Optimized for mobile devices with intuitive swipe gestures
+- **Export Functionality:** Download curated articles as markdown files for easy sharing
+- **SQLite Storage:** Articles are persisted using SQLModel with SQLite and proper indexing
 
 ## Project Structure
 
@@ -49,8 +59,6 @@ First, configure the Python backend and install its dependencies.
 
     ```
     NEWSDATA_API_KEY="your_newsdata.io_api_key"
-    OPENAI_API_KEY="your_openai_api_key"
-    SLACK_WEBHOOK_URL="your_slack_webhook_url"
     ```
 
 3.  **Create and activate a Python virtual environment:**
@@ -115,7 +123,7 @@ You can now open your web browser to the frontend URL to use the application.
 To start both the backend and frontend at once, run the helper script from the project root:
 
 ```bash
-./dev.sh
+c
 ```
 
 The script launches the FastAPI backend and Vite frontend concurrently. Press `Ctrl+C` to stop both servers.

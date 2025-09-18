@@ -8,6 +8,5 @@ aiofiles
 python-multipart
 beautifulsoup4
 lxml
-openai
 httpx
 apscheduler

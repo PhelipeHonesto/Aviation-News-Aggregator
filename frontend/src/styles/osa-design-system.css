@@ -1,0 +1,514 @@
+/* OSA Design System 2025 - Orange Sunshine Aviation */
+
+/* Import OSA Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
+
+/* Coolvetica is a premium font - using a similar Swiss-style font as fallback */
+@font-face {
+  font-family: 'Coolvetica';
+  src: url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  font-display: swap;
+}
+
+/* OSA Color Palette */
+:root {
+  /* Primary Palette */
+  --osa-orange: #FF6B35;        /* Vibrant Orange - Energy, Innovation */
+  --osa-beige: #F5F1E8;         /* Light Beige - Clarity, Accessibility */
+  --osa-gray: #2C2C2C;          /* Dark Gray - Trust, Professionalism */
+  
+  /* Secondary Palette */
+  --osa-purple: #8B5FBF;        /* Purple - Premium, Innovation */
+  --osa-lilac: #B8A9D9;         /* Lilac - Soft, Approachable */
+  --osa-blue: #4A90E2;          /* Light Blue - Trust, Sky */
+  --osa-yellow: #FFD700;        /* Yellow - Alertness, Energy */
+  
+  /* Neutral Palette */
+  --osa-white: #FFFFFF;
+  --osa-light-gray: #F8F9FA;
+  --osa-medium-gray: #6C757D;
+  --osa-dark-gray: #343A40;
+  
+  /* Status Colors */
+  --osa-success: #28A745;
+  --osa-warning: #FFC107;
+  --osa-error: #DC3545;
+  --osa-info: #17A2B8;
+  
+  /* Typography */
+  --font-primary: 'Coolvetica', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-secondary: 'Lexend', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  
+  /* Spacing Scale */
+  --space-xs: 0.25rem;   /* 4px */
+  --space-sm: 0.5rem;    /* 8px */
+  --space-md: 1rem;      /* 16px */
+  --space-lg: 1.5rem;    /* 24px */
+  --space-xl: 2rem;      /* 32px */
+  --space-2xl: 3rem;     /* 48px */
+  --space-3xl: 4rem;     /* 64px */
+  
+  /* Border Radius */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.1);
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease-in-out;
+  --transition-normal: 0.3s ease-in-out;
+  --transition-slow: 0.5s ease-in-out;
+}
+
+/* Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-secondary);
+  background: linear-gradient(135deg, var(--osa-beige) 0%, var(--osa-light-gray) 100%);
+  color: var(--osa-gray);
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* OSA Typography Scale */
+.osa-heading-1 {
+  font-family: var(--font-primary);
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--osa-orange);
+  margin: 0;
+}
+
+.osa-heading-2 {
+  font-family: var(--font-primary);
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--osa-gray);
+  margin: 0;
+}
+
+.osa-heading-3 {
+  font-family: var(--font-primary);
+  font-size: 1.875rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--osa-gray);
+  margin: 0;
+}
+
+.osa-heading-4 {
+  font-family: var(--font-primary);
+  font-size: 1.5rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--osa-gray);
+  margin: 0;
+}
+
+.osa-body-large {
+  font-family: var(--font-secondary);
+  font-size: 1.125rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--osa-gray);
+}
+
+.osa-body {
+  font-family: var(--font-secondary);
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--osa-gray);
+}
+
+.osa-body-small {
+  font-family: var(--font-secondary);
+  font-size: 0.875rem;
+  font-weight: 400;
+  line-height: 1.5;
+  color: var(--osa-medium-gray);
+}
+
+.osa-caption {
+  font-family: var(--font-secondary);
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--osa-medium-gray);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* OSA Button System */
+.osa-btn {
+  font-family: var(--font-primary);
+  font-weight: 600;
+  font-size: 1rem;
+  padding: var(--space-md) var(--space-xl);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  min-height: 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+.osa-btn:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left var(--transition-slow);
+}
+
+.osa-btn:hover:before {
+  left: 100%;
+}
+
+.osa-btn-primary {
+  background: linear-gradient(135deg, var(--osa-orange) 0%, #FF8C42 100%);
+  color: var(--osa-white);
+  box-shadow: var(--shadow-md);
+}
+
+.osa-btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+  background: linear-gradient(135deg, #E55A2B 0%, #FF7A35 100%);
+}
+
+.osa-btn-secondary {
+  background: var(--osa-white);
+  color: var(--osa-orange);
+  border: 2px solid var(--osa-orange);
+}
+
+.osa-btn-secondary:hover {
+  background: var(--osa-orange);
+  color: var(--osa-white);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.osa-btn-ghost {
+  background: transparent;
+  color: var(--osa-gray);
+  border: 2px solid var(--osa-gray);
+}
+
+.osa-btn-ghost:hover {
+  background: var(--osa-gray);
+  color: var(--osa-white);
+}
+
+.osa-btn-sm {
+  padding: var(--space-sm) var(--space-lg);
+  font-size: 0.875rem;
+  min-height: 36px;
+}
+
+.osa-btn-lg {
+  padding: var(--space-lg) var(--space-2xl);
+  font-size: 1.125rem;
+  min-height: 56px;
+}
+
+/* OSA Card System */
+.osa-card {
+  background: var(--osa-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: var(--space-xl);
+  border: 1px solid rgba(255, 107, 53, 0.1);
+  transition: all var(--transition-normal);
+  position: relative;
+  overflow: hidden;
+}
+
+.osa-card:before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--osa-orange), var(--osa-purple), var(--osa-blue));
+}
+
+.osa-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-xl);
+  border-color: var(--osa-orange);
+}
+
+.osa-card-header {
+  margin-bottom: var(--space-lg);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--osa-beige);
+}
+
+.osa-card-title {
+  font-family: var(--font-primary);
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--osa-gray);
+  margin: 0 0 var(--space-sm) 0;
+}
+
+.osa-card-subtitle {
+  font-family: var(--font-secondary);
+  font-size: 0.875rem;
+  color: var(--osa-medium-gray);
+  margin: 0;
+}
+
+/* OSA Status Badges */
+.osa-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-xs) var(--space-md);
+  border-radius: var(--radius-lg);
+  font-family: var(--font-primary);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  gap: var(--space-xs);
+}
+
+.osa-badge-new {
+  background: rgba(108, 117, 125, 0.1);
+  color: var(--osa-medium-gray);
+  border: 1px solid var(--osa-medium-gray);
+}
+
+.osa-badge-selected {
+  background: rgba(255, 107, 53, 0.1);
+  color: var(--osa-orange);
+  border: 1px solid var(--osa-orange);
+}
+
+.osa-badge-edited {
+  background: rgba(74, 144, 226, 0.1);
+  color: var(--osa-blue);
+  border: 1px solid var(--osa-blue);
+}
+
+.osa-badge-exported {
+  background: rgba(40, 167, 69, 0.1);
+  color: var(--osa-success);
+  border: 1px solid var(--osa-success);
+}
+
+/* OSA Diamond Pattern Background */
+.osa-diamond-bg {
+  position: relative;
+  overflow: hidden;
+}
+
+.osa-diamond-bg:before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background-image: 
+    linear-gradient(45deg, transparent 25%, rgba(255, 107, 53, 0.03) 25%),
+    linear-gradient(-45deg, transparent 25%, rgba(255, 107, 53, 0.03) 25%),
+    linear-gradient(45deg, rgba(255, 107, 53, 0.03) 75%, transparent 75%),
+    linear-gradient(-45deg, rgba(255, 107, 53, 0.03) 75%, transparent 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+  animation: osa-diamond-move 20s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes osa-diamond-move {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(20px, 20px); }
+}
+
+/* OSA Layout Components */
+.osa-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 var(--space-lg);
+}
+
+.osa-section {
+  padding: var(--space-3xl) 0;
+}
+
+.osa-grid {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.osa-grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+.osa-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+}
+
+.osa-flex {
+  display: flex;
+  gap: var(--space-md);
+}
+
+.osa-flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.osa-flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* OSA Navigation */
+.osa-nav {
+  background: var(--osa-white);
+  border-bottom: 1px solid var(--osa-beige);
+  box-shadow: var(--shadow-sm);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.osa-nav-brand {
+  font-family: var(--font-primary);
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--osa-orange);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.osa-nav-links {
+  display: flex;
+  gap: var(--space-lg);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.osa-nav-link {
+  font-family: var(--font-secondary);
+  font-weight: 500;
+  color: var(--osa-gray);
+  text-decoration: none;
+  padding: var(--space-md) var(--space-lg);
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+}
+
+.osa-nav-link:hover,
+.osa-nav-link.active {
+  background: var(--osa-orange);
+  color: var(--osa-white);
+}
+
+/* OSA Loading States */
+.osa-loading {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--osa-orange);
+}
+
+.osa-spinner {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--osa-beige);
+  border-top: 2px solid var(--osa-orange);
+  border-radius: 50%;
+  animation: osa-spin 1s linear infinite;
+}
+
+@keyframes osa-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* OSA Responsive Design */
+@media (max-width: 768px) {
+  .osa-heading-1 {
+    font-size: 2.25rem;
+  }
+  
+  .osa-heading-2 {
+    font-size: 1.875rem;
+  }
+  
+  .osa-container {
+    padding: 0 var(--space-md);
+  }
+  
+  .osa-nav-links {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  
+  .osa-grid-2,
+  .osa-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* OSA Utility Classes */
+.osa-text-center { text-align: center; }
+.osa-text-left { text-align: left; }
+.osa-text-right { text-align: right; }
+
+.osa-mt-0 { margin-top: 0; }
+.osa-mt-1 { margin-top: var(--space-sm); }
+.osa-mt-2 { margin-top: var(--space-md); }
+.osa-mt-3 { margin-top: var(--space-lg); }
+.osa-mt-4 { margin-top: var(--space-xl); }
+
+.osa-mb-0 { margin-bottom: 0; }
+.osa-mb-1 { margin-bottom: var(--space-sm); }
+.osa-mb-2 { margin-bottom: var(--space-md); }
+.osa-mb-3 { margin-bottom: var(--space-lg); }
+.osa-mb-4 { margin-bottom: var(--space-xl); }
+
+.osa-p-0 { padding: 0; }
+.osa-p-1 { padding: var(--space-sm); }
+.osa-p-2 { padding: var(--space-md); }
+.osa-p-3 { padding: var(--space-lg); }
+.osa-p-4 { padding: var(--space-xl); }
+
+.osa-hidden { display: none; }
+.osa-visible { display: block; }
+
+.osa-w-full { width: 100%; }
+.osa-h-full { height: 100%; }
