@@ -1,0 +1,167 @@
+# Loud Hawk v2 - Trusted Sources Only
+# Proven RSS feeds with high reliability
+# HTML sources disabled by default until validated
+
+# ========== REGULATORS & SAFETY (RSS Only) ==========
+- name: FAA Newsroom
+  category: REGULATOR
+  weight: 10
+  kind: rss
+  enabled: true
+  home: https://www.faa.gov/newsroom
+  discover: true
+
+- name: NTSB Press Releases
+  category: SAFETY
+  weight: 10
+  kind: rss
+  enabled: true
+  home: https://www.ntsb.gov/news/press-releases
+  discover: true
+
+- name: EASA News
+  category: REGULATOR
+  weight: 9
+  kind: rss
+  enabled: true
+  home: https://www.easa.europa.eu/en/newsroom-and-events/news
+  discover: true
+
+- name: ICAO Newsroom
+  category: REGULATOR
+  weight: 8
+  kind: rss
+  enabled: true
+  home: https://www.icao.int/Newsroom/Pages/default.aspx
+  discover: true
+
+# ========== OEMs (RSS Only) ==========
+- name: Airbus Newsroom
+  category: OEM
+  weight: 9
+  kind: rss
+  enabled: true
+  home: https://www.airbus.com/en/newsroom
+  discover: true
+
+- name: Embraer Media
+  category: OEM
+  weight: 8
+  kind: rss
+  enabled: true
+  home: https://embraer.com/global/en/newsroom
+  discover: true
+
+- name: Bombardier News
+  category: OEM
+  weight: 7
+  kind: rss
+  enabled: true
+  home: https://bombardier.com/en/news
+  discover: true
+
+- name: Gulfstream News
+  category: OEM
+  weight: 7
+  kind: rss
+  enabled: true
+  home: https://www.gulfstream.com/en/news
+  discover: true
+
+- name: Textron Aviation News
+  category: OEM
+  weight: 7
+  kind: rss
+  enabled: true
+  home: https://txtav.com/en/newsroom
+  discover: true
+
+# ========== AIRLINES (RSS Only) ==========
+- name: Alaska Airlines Newsroom
+  category: AIRLINE
+  weight: 7
+  kind: rss
+  enabled: true
+  home: https://news.alaskaair.com/
+  discover: true
+
+- name: American Airlines Newsroom
+  category: AIRLINE
+  weight: 7
+  kind: rss
+  enabled: true
+  home: https://news.aa.com/
+  discover: true
+
+- name: United Airlines Newsroom
+  category: AIRLINE
+  weight: 7
+  kind: rss
+  enabled: true
+  home: https://united.mediaroom.com/
+  discover: true
+
+- name: Delta News Hub
+  category: AIRLINE
+  weight: 7
+  kind: rss
+  enabled: true
+  home: https://news.delta.com/
+  discover: true
+
+- name: JetBlue Newsroom
+  category: AIRLINE
+  weight: 6
+  kind: rss
+  enabled: true
+  home: https://news.jetblue.com/
+  discover: true
+
+# ========== MEDIA (RSS Only) ==========
+- name: AVweb
+  category: MEDIA
+  weight: 6
+  kind: rss
+  enabled: true
+  url: https://www.avweb.com/feed/
+
+- name: AirlineGeeks
+  category: MEDIA
+  weight: 6
+  kind: rss
+  enabled: true
+  url: https://airlinegeeks.com/feed/
+
+- name: Simple Flying
+  category: MEDIA
+  weight: 6
+  kind: rss
+  enabled: true
+  url: https://simpleflying.com/feed/
+
+# ========== HTML SOURCES (Disabled by Default) ==========
+- name: Southwest Newsroom (HTML)
+  category: AIRLINE
+  weight: 6
+  kind: html
+  enabled: false
+  home: https://community.southwest.com/t5/Blog/bg-p/blog
+  selectors:
+    item: "article, .post, .press-item"
+    title: "h1 a, h2 a, .title a::text"
+    link: "h1 a, h2 a, .title a::attr(href)"
+    date: "time[datetime]::attr(datetime), .date::text"
+    summary: ".excerpt, .summary, p::text"
+
+- name: Spirit Airlines Newsroom (HTML)
+  category: AIRLINE
+  weight: 5
+  kind: html
+  enabled: false
+  home: https://ir.spirit.com/press-releases
+  selectors:
+    item: "article, .post, .press-item"
+    title: "h1 a, h2 a, .title a::text"
+    link: "h1 a, h2 a, .title a::attr(href)"
+    date: "time[datetime]::attr(datetime), .date::text"
+    summary: ".excerpt, .summary, p::text"

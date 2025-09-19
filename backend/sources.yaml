@@ -1,0 +1,235 @@
+# backend/sources.yaml
+
+# ========== REGULATORY & SAFETY ==========
+- name: FAA Newsroom
+  category: REGULATOR
+  weight: 10
+  kind: rss
+  home: https://www.faa.gov/newsroom
+  discover: true
+  # candidate_rss: ["https://www.faa.gov/rss.xml", "https://www.faa.gov/newsroom/rss.xml"]
+
+- name: FAA Air Traffic Updates / NOTAMs (headlines)
+  category: REGULATOR
+  weight: 10
+  kind: rss
+  home: https://www.faa.gov/air_traffic
+  discover: true
+
+- name: NTSB Press Releases
+  category: SAFETY
+  weight: 10
+  kind: rss
+  home: https://www.ntsb.gov/news/press-releases
+  discover: true
+
+- name: EASA News
+  category: REGULATOR
+  weight: 9
+  kind: rss
+  home: https://www.easa.europa.eu/en/newsroom-and-events/news
+  discover: true
+
+- name: ICAO Newsroom
+  category: REGULATOR
+  weight: 8
+  kind: rss
+  home: https://www.icao.int/Newsroom/Pages/default.aspx
+  discover: true
+
+- name: Transport Canada Civil Aviation (TCCA) News
+  category: REGULATOR
+  weight: 7
+  kind: rss
+  home: https://tc.canada.ca/en/aviation
+  discover: true
+
+# ========== OEMs ==========
+- name: Boeing Newsroom
+  category: OEM
+  weight: 9
+  kind: rss
+  home: https://boeing.mediaroom.com/
+  discover: true
+
+- name: Airbus Newsroom
+  category: OEM
+  weight: 9
+  kind: rss
+  home: https://www.airbus.com/en/newsroom
+  discover: true
+
+- name: Embraer Media
+  category: OEM
+  weight: 8
+  kind: rss
+  home: https://embraer.com/global/en/newsroom
+  discover: true
+
+- name: Bombardier News
+  category: OEM
+  weight: 7
+  kind: rss
+  home: https://bombardier.com/en/news
+  discover: true
+
+- name: Gulfstream News
+  category: OEM
+  weight: 7
+  kind: rss
+  home: https://www.gulfstream.com/en/news
+  discover: true
+
+- name: Textron Aviation (Cessna/Beechcraft) News
+  category: OEM
+  weight: 7
+  kind: rss
+  home: https://txtav.com/en/newsroom
+  discover: true
+
+# ========== AIRLINES (US sample — add your region) ==========
+- name: Alaska Airlines Newsroom
+  category: AIRLINE
+  weight: 7
+  kind: rss
+  home: https://news.alaskaair.com/
+  discover: true
+
+- name: American Airlines Newsroom
+  category: AIRLINE
+  weight: 7
+  kind: rss
+  home: https://news.aa.com/
+  discover: true
+
+- name: United Airlines Newsroom
+  category: AIRLINE
+  weight: 7
+  kind: rss
+  home: https://united.mediaroom.com/
+  discover: true
+
+- name: Delta News Hub
+  category: AIRLINE
+  weight: 7
+  kind: rss
+  home: https://news.delta.com/
+  discover: true
+
+- name: Southwest Newsroom
+  category: AIRLINE
+  weight: 6
+  kind: rss
+  home: https://community.southwest.com/t5/Blog/bg-p/blog
+  discover: true
+
+- name: JetBlue Newsroom
+  category: AIRLINE
+  weight: 6
+  kind: rss
+  home: https://news.jetblue.com/
+  discover: true
+
+- name: Spirit Airlines Newsroom
+  category: AIRLINE
+  weight: 5
+  kind: rss
+  home: https://ir.spirit.com/press-releases
+  discover: true
+
+- name: Frontier Airlines Newsroom
+  category: AIRLINE
+  weight: 5
+  kind: rss
+  home: https://news.flyfrontier.com/
+  discover: true
+
+# ========== INDUSTRY / MEDIA ==========
+- name: AVweb
+  category: MEDIA
+  weight: 6
+  kind: rss
+  url: https://www.avweb.com/feed/
+
+- name: AirlineGeeks
+  category: MEDIA
+  weight: 6
+  kind: rss
+  url: https://airlinegeeks.com/feed/
+
+- name: FlightGlobal
+  category: MEDIA
+  weight: 6
+  kind: rss
+  home: https://www.flightglobal.com/news
+  discover: true
+
+- name: Simple Flying
+  category: MEDIA
+  weight: 6
+  kind: rss
+  url: https://simpleflying.com/feed/
+
+- name: AeroTime
+  category: MEDIA
+  weight: 5
+  home: https://www.aerotime.aero/
+  kind: rss
+  discover: true
+
+# ========== eVTOL & FUTURE AVIATION ==========
+- name: Joby Aviation News
+  category: EVTOL
+  weight: 6
+  home: https://www.jobyaviation.com/news/
+  kind: rss
+  discover: true
+
+- name: Archer Aviation News
+  category: EVTOL
+  weight: 6
+  home: https://archer.com/news
+  kind: rss
+  discover: true
+
+- name: Lilium Newsroom
+  category: EVTOL
+  weight: 5
+  home: https://lilium.com/newsroom
+  kind: rss
+  discover: true
+
+# ========== ORGS ==========
+- name: AOPA News
+  category: ORG
+  weight: 6
+  home: https://www.aopa.org/news-and-media
+  kind: rss
+  discover: true
+
+- name: NBAA News
+  category: ORG
+  weight: 6
+  home: https://nbaa.org/news/
+  kind: rss
+  discover: true
+
+- name: NASA Aeronautics
+  category: ORG
+  weight: 6
+  home: https://www.nasa.gov/aeronautics/
+  kind: rss
+  discover: true
+
+# ========== HTML FALLBACK EXAMPLES (no public RSS) ==========
+- name: Example Airline Pressroom (HTML)
+  category: AIRLINE
+  weight: 5
+  kind: html
+  home: https://www.exampleair.com/newsroom
+  selectors:
+    item: "article, .post, .press-item"
+    title: "h1 a, h2 a, .title a::text"
+    link: "h1 a, h2 a, .title a::attr(href)"
+    date: "time[datetime]::attr(datetime), .date::text"
+    summary: ".excerpt, .summary, p::text"

@@ -1,108 +1,168 @@
-"""Database utilities for the OsaCurator backend."""
-
-from typing import List, Optional
+"""
+Loud Hawk v2 - Database Operations
+Simple, focused database operations for news aggregation
+"""
 import os
-import uuid
+from sqlmodel import SQLModel, create_engine, Session
+from models import NewsArticle, Bookmark
+from typing import List, Optional
 import logging
-from datetime import datetime
 
-from sqlalchemy import text
-from sqlmodel import Field, Session, SQLModel, create_engine, select
+logger = logging.getLogger(__name__)
 
-# --- Database Setup ---
-DB_PATH = os.path.join(os.path.dirname(__file__), "news.db")
-engine = create_engine(f"sqlite:///{DB_PATH}", echo=False)
+# Database setup
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./loudhawk.db")
+engine = create_engine(DATABASE_URL, echo=False)
 
-# --- Models ---
-class Article(SQLModel, table=True):
-    id: str = Field(default_factory=lambda: str(uuid.uuid4()), primary_key=True)
-    title: str = Field(index=True)
-    summary: Optional[str] = None
-    published_at: datetime = Field(index=True)
-    body: Optional[str] = None
-    link: str = Field(unique=True, index=True)
-    source: str = Field(index=True)
-    status: str = Field(default="new", index=True)
-    created_at: datetime = Field(default_factory=datetime.now, index=True)
-    updated_at: datetime = Field(default_factory=datetime.now)
+def init_db():
+    """Initialize database tables"""
+    try:
+        SQLModel.metadata.create_all(engine)
+        logger.info("Database initialized successfully")
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        raise
 
-# --- DB Init ---
-def init_db() -> None:
-    """Create database tables if they don't already exist."""
-    SQLModel.metadata.create_all(engine)
+def get_session():
+    """Get database session"""
+    return Session(engine)
 
-# --- Public API ---
-def get_all_news() -> List[Article]:
-    """Return all articles stored in the database."""
-    with Session(engine) as session:
-        articles = session.exec(select(Article)).all()
-        return articles
-
-def save_all_news(news_list: List[dict]) -> None:
-    """Upsert news articles by ID or link. If no ID, create new."""
-    with Session(engine) as session:
-        for news in news_list:
+def save_articles(articles: List[NewsArticle]):
+    """Save articles to database with deduplication"""
+    with get_session() as session:
+        saved_count = 0
+        duplicate_count = 0
+        
+        for article in articles:
             try:
-                news_id = news.get("id")
-                link = news.get("link")
+                # Check if article already exists
+                existing = session.query(NewsArticle).filter(
+                    NewsArticle.content_hash == article.content_hash
+                ).first()
                 
-                # Try to find existing article by ID first, then by link
-                article = None
-                if news_id:
-                    article = session.get(Article, news_id)
+                if existing:
+                    duplicate_count += 1
+                    continue
                 
-                if not article and link:
-                    # Try to find by link to avoid duplicates
-                    stmt = select(Article).where(Article.link == link)
-                    article = session.exec(stmt).first()
+                session.add(article)
+                saved_count += 1
                 
-                if article:
-                    # Update existing article
-                    for key, value in news.items():
-                        if key != "id":  # Don't update the ID
-                            setattr(article, key, value)
-                    article.updated_at = datetime.now()
-                else:
-                    # Create new article
-                    if not news_id:
-                        news["id"] = str(uuid.uuid4())
-                    if "published_at" not in news:
-                        news["published_at"] = datetime.now()
-                    elif isinstance(news["published_at"], str):
-                        try:
-                            # Handle both ISO format and other formats
-                            if 'T' in news["published_at"]:
-                                news["published_at"] = datetime.fromisoformat(news["published_at"].replace('Z', '+00:00'))
-                            else:
-                                # Try parsing as regular datetime string
-                                news["published_at"] = datetime.strptime(news["published_at"], "%Y-%m-%d %H:%M:%S")
-                        except Exception:
-                            news["published_at"] = datetime.now()
-                    
-                    # Set timestamps
-                    now = datetime.now()
-                    news["created_at"] = now
-                    news["updated_at"] = now
-                    
-                    article = Article(**news)
-                    session.add(article)
-                    
             except Exception as e:
-                logging.error(f"Error upserting article: {e}")
+                logger.error(f"Error saving article {article.title}: {e}")
                 continue
-                
+        
+        session.commit()
+        logger.info(f"Saved {saved_count} new articles, {duplicate_count} duplicates skipped")
+        return saved_count
+
+def get_articles(
+    source: Optional[str] = None,
+    category: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0
+) -> List[NewsArticle]:
+    """Get articles with optional filtering"""
+    with get_session() as session:
+        query = session.query(NewsArticle)
+        
+        if source:
+            query = query.filter(NewsArticle.source == source)
+        if category:
+            query = query.filter(NewsArticle.category == category)
+        
+        return query.order_by(
+            NewsArticle.published_at.desc()
+        ).offset(offset).limit(limit).all()
+
+def search_articles(query: str, limit: int = 50) -> List[NewsArticle]:
+    """Search articles by title and summary"""
+    with get_session() as session:
+        search_term = f"%{query.lower()}%"
+        
+        return session.query(NewsArticle).filter(
+            NewsArticle.title.ilike(search_term) |
+            NewsArticle.summary.ilike(search_term)
+        ).order_by(
+            NewsArticle.published_at.desc()
+        ).limit(limit).all()
+
+def get_sources() -> List[str]:
+    """Get all unique sources"""
+    with get_session() as session:
+        return [row[0] for row in session.query(NewsArticle.source).distinct().all()]
+
+# Bookmark functions
+def add_bookmark(article_id: int, user_id: str = "default") -> bool:
+    """Add an article to bookmarks"""
+    with get_session() as session:
         try:
+            # Check if already bookmarked
+            existing = session.query(Bookmark).filter(
+                Bookmark.article_id == article_id,
+                Bookmark.user_id == user_id
+            ).first()
+            
+            if existing:
+                return False  # Already bookmarked
+            
+            # Get article details
+            article = session.query(NewsArticle).filter(NewsArticle.id == article_id).first()
+            if not article:
+                return False
+            
+            # Create bookmark
+            bookmark = Bookmark(
+                article_id=article_id,
+                user_id=user_id,
+                article_title=article.title,
+                article_source=article.source,
+                article_url=article.url,
+                article_published_at=article.published_at,
+                article_summary=article.summary,
+                article_category=article.category
+            )
+            
+            session.add(bookmark)
             session.commit()
+            return True
+            
         except Exception as e:
-            logging.error(f"Error committing articles to database: {e}")
-            session.rollback()
+            logger.error(f"Error adding bookmark: {e}")
+            return False
 
-def find_news_by_id(story_id: str) -> Optional[Article]:
-    """Return a single article by ID, or ``None`` if not found."""
-    with Session(engine) as session:
-        article = session.get(Article, story_id)
-        return article
+def remove_bookmark(article_id: int, user_id: str = "default") -> bool:
+    """Remove an article from bookmarks"""
+    with get_session() as session:
+        try:
+            bookmark = session.query(Bookmark).filter(
+                Bookmark.article_id == article_id,
+                Bookmark.user_id == user_id
+            ).first()
+            
+            if bookmark:
+                session.delete(bookmark)
+                session.commit()
+                return True
+            return False
+            
+        except Exception as e:
+            logger.error(f"Error removing bookmark: {e}")
+            return False
 
-def generate_id() -> str:
-    """Generate a new UUID string."""
-    return str(uuid.uuid4())
+def get_bookmarks(user_id: str = "default", limit: int = 50) -> List[Bookmark]:
+    """Get user's bookmarks"""
+    with get_session() as session:
+        return session.query(Bookmark).filter(
+            Bookmark.user_id == user_id
+        ).order_by(
+            Bookmark.created_at.desc()
+        ).limit(limit).all()
+
+def is_bookmarked(article_id: int, user_id: str = "default") -> bool:
+    """Check if article is bookmarked"""
+    with get_session() as session:
+        bookmark = session.query(Bookmark).filter(
+            Bookmark.article_id == article_id,
+            Bookmark.user_id == user_id
+        ).first()
+        return bookmark is not None
