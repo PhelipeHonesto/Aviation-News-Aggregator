@@ -1,0 +1,34 @@
+# Loud Hawk v2 - Development Docker Compose Override
+# Development overrides for hot reload and bind mounts
+
+services:
+  # Frontend Development Server
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_BASE_URL=http://localhost:8000
+    restart: unless-stopped
+    depends_on:
+      - backend
+
+  # Backend Development Server
+  backend:
+    command: uvicorn main:app --reload --host 0.0.0.0 --port 8000
+    environment:
+      - DATABASE_URL=postgresql://loudhawk:loudhawk_password@postgres:5432/loudhawk
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=DEBUG
+      - LOG_FORMAT=json
+      - ALLOWED_ORIGINS=http://localhost:5173,http://localhost:3000,http://frontend:5173
+      - SCHEDULER_ENABLED=true
+    volumes:
+      - ./backend:/app
+      - backend_logs:/app/logs
+    restart: unless-stopped

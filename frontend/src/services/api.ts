@@ -1,6 +1,6 @@
 import type {
   NewsResponse,
-  SourcesResponse,     // <- this was missing
+  SourcesResponse,
   BookmarksResponse,
   SourceHealth,
   SearchResponse,

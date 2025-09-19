@@ -70,6 +70,49 @@ frontend/
 └── vite.config.ts            # Vite build configuration
 ```
 
+## 📁 Project Structure
+
+```
+osacurator/
+├── 📄 README.md                    # This comprehensive documentation
+├── 📄 LICENSE                      # MIT License
+├── 📄 env.template                 # Environment variables template
+├── 📄 deploy.sh                    # Deployment script
+├── 📄 docker-compose.yml           # Docker orchestration
+├── 📄 Dockerfile                   # Multi-stage container build
+│
+├── 🖥️ backend/                     # Python/FastAPI Backend
+│   ├── 📄 main.py                  # FastAPI application with professional API
+│   ├── 📄 models.py                # SQLModel data models with deduplication
+│   ├── 📄 database.py              # Database operations and session management
+│   ├── 📄 ingest.py                # Multi-strategy news ingestion
+│   ├── 📄 source_adapters.py       # Advanced source adapter strategies
+│   ├── 📄 ranking_system.py        # Authority-weighted content ranking
+│   ├── 📄 dynamic_scheduler.py     # Smart polling frequency management
+│   ├── 📄 source_health.py         # Circuit breaker and reliability tracking
+│   ├── 📄 youtube_adapter.py       # YouTube channel integration
+│   ├── 📄 scheduler.py             # Background task scheduling
+│   ├── 📄 sources_loader.py        # CSV source import utility
+│   ├── 📄 trusted_sources.yaml     # Source configuration (23+ sources)
+│   ├── 📄 osa_sources_seed.csv     # Complete source database (74+ sources)
+│   ├── 📄 requirements.txt         # Python dependencies (organized)
+│   └── 📄 loudhawk.db              # SQLite database
+│
+├── 🌐 frontend/                    # React/TypeScript Frontend
+│   ├── 📄 package.json             # Node.js dependencies (v2.0.0)
+│   ├── 📄 vite.config.ts           # Vite build configuration
+│   ├── 📄 tsconfig.json            # TypeScript configuration
+│   ├── 📄 eslint.config.js         # ESLint configuration
+│   ├── 📄 index.html               # Main HTML template
+│   ├── 📁 public/                  # Static assets
+│   └── 📁 src/                     # Source code
+│       ├── 📄 App.tsx              # Main application component
+│       ├── 📁 pages/               # Page components
+│       ├── 📁 services/            # API services
+│       ├── 📁 types/               # TypeScript definitions
+│       └── 📁 assets/              # Images and icons
+```
+
 ## 🚀 Quick Start
 
 ### **Prerequisites**
@@ -102,6 +145,17 @@ The backend will be available at:
 - **Alternative Docs**: http://localhost:8000/redoc
 
 ### **Frontend Setup**
+
+#### **Option 1: Docker (Recommended)**
+```bash
+# Start all services including frontend
+./docker-dev.sh start
+
+# Or manually with docker-compose
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up -d
+```
+
+#### **Option 2: Local Development**
 ```bash
 # Navigate to frontend (in new terminal)
 cd frontend
@@ -114,6 +168,57 @@ npm run dev
 ```
 
 The frontend will be available at: http://localhost:5173
+
+## 🐳 Docker Management
+
+### **Quick Commands (Makefile)**
+```bash
+# Development environment (recommended)
+make dev
+
+# Production environment
+make prod
+
+# Stop all services
+make down
+
+# View service status
+make status
+
+# View logs
+make logs
+
+# Clean up resources
+make clean
+```
+
+### **Advanced Commands**
+```bash
+# Start backend only
+make backend
+
+# Start frontend only (requires backend)
+make frontend
+
+# Rebuild images (no cache)
+make rebuild
+
+# View development logs
+make dev-logs
+```
+
+### **Service Architecture**
+- **Frontend**: React/Vite development server with hot reload (Docker)
+- **Backend**: FastAPI application with auto-reload (Docker)
+- **PostgreSQL**: Database with persistent storage (Docker)
+- **Redis**: Caching and rate limiting (Docker)
+
+### **Optimized Setup**
+- ✅ **Clean separation**: Production (`docker-compose.yml`) + Development (`docker-compose.dev.yml`)
+- ✅ **Optimized builds**: Comprehensive `.dockerignore` reduces build context
+- ✅ **Health checks**: Proper service health monitoring
+- ✅ **Single scheduler**: Prevents multiple schedulers in multi-container setups
+- ✅ **Volume management**: Persistent data with Docker volumes
 
 ## 📊 API Endpoints
 

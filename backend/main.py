@@ -13,11 +13,13 @@ Features:
 - Advanced content filtering
 """
 
-from fastapi import FastAPI, Query, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from typing import Optional
+import os
 import logging
 from datetime import datetime
+from typing import Optional
+
+from fastapi import FastAPI, Query, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 
 from models import NewsArticle, Bookmark
 from database import (
@@ -52,7 +54,6 @@ app = FastAPI(
 )
 
 # CORS configuration - hardened for production
-import os
 allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
 
 app.add_middleware(
@@ -67,8 +68,14 @@ app.add_middleware(
 @app.on_event("startup")
 async def startup_event():
     init_db()
-    start_scheduler()
-    logger.info("Loud Hawk News Aggregator started with auto-scheduler")
+    
+    # Only start scheduler if enabled (prevents multiple schedulers in multi-container setups)
+    scheduler_enabled = os.getenv("SCHEDULER_ENABLED", "true").lower() == "true"
+    if scheduler_enabled:
+        start_scheduler()
+        logger.info("Loud Hawk News Aggregator started with auto-scheduler")
+    else:
+        logger.info("Loud Hawk News Aggregator started without scheduler (disabled)")
 
 # Cleanup on shutdown
 @app.on_event("shutdown")
