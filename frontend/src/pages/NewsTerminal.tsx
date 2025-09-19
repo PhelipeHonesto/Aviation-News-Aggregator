@@ -4,7 +4,7 @@ import { api } from '../services/api';
 
 const NewsTerminal: React.FC = () => {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [sources, setSources] = useState<string[]>([]);
+  const [sources, setSources] = useState<SourceHealth[]>([]);
   const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(true);
@@ -148,34 +148,37 @@ const NewsTerminal: React.FC = () => {
       };
     }
     
-    if (health.error_streak >= 3) {
+    const errStreak = health.error_streak ?? 0;
+    const relScore = health.reliability_score ?? 0;
+    
+    if (errStreak >= 3) {
       return { 
         status: 'failed', 
         color: 'red', 
-        tooltip: `Failed last ${health.error_streak} fetches. Last error: ${health.last_error || 'Unknown'}` 
+        tooltip: `Failed last ${errStreak} fetches. Last error: ${health.last_error || 'Unknown'}` 
       };
     }
     
-    if (health.reliability_score >= 0.9) {
+    if (relScore >= 0.9) {
       return { 
         status: 'excellent', 
         color: 'green', 
-        tooltip: `Excellent reliability (${Math.round(health.reliability_score * 100)}%). Last updated: ${health.last_ok_at ? formatTimeAgo(health.last_ok_at) : 'Never'}` 
+        tooltip: `Excellent reliability (${Math.round(relScore * 100)}%). Last updated: ${health.last_ok_at ? formatTimeAgo(health.last_ok_at) : 'Never'}` 
       };
     }
     
-    if (health.reliability_score >= 0.7) {
+    if (relScore >= 0.7) {
       return { 
         status: 'good', 
         color: 'yellow', 
-        tooltip: `Good reliability (${Math.round(health.reliability_score * 100)}%). Last updated: ${health.last_ok_at ? formatTimeAgo(health.last_ok_at) : 'Never'}` 
+        tooltip: `Good reliability (${Math.round(relScore * 100)}%). Last updated: ${health.last_ok_at ? formatTimeAgo(health.last_ok_at) : 'Never'}` 
       };
     }
     
     return { 
       status: 'poor', 
       color: 'red', 
-      tooltip: `Poor reliability (${Math.round(health.reliability_score * 100)}%). Last updated: ${health.last_ok_at ? formatTimeAgo(health.last_ok_at) : 'Never'}` 
+      tooltip: `Poor reliability (${Math.round(relScore * 100)}%). Last updated: ${health.last_ok_at ? formatTimeAgo(health.last_ok_at) : 'Never'}` 
     };
   };
 
@@ -232,22 +235,22 @@ const NewsTerminal: React.FC = () => {
               <div className="reliability-dot reliability-green"></div>
             </div>
             {sources.map(source => {
-              const healthStatus = getSourceHealthStatus(source);
-              const health = sourceHealth.find(s => s.name === source);
+              const healthStatus = getSourceHealthStatus(source.name);
+              const health = sourceHealth.find(s => s.name === source.name);
               const isDisabled = healthStatus.status === 'disabled' || healthStatus.status === 'failed';
               
               return (
                 <div 
-                  key={source} 
-                  className={`source-item ${selectedSource === source ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`}
-                  onClick={() => !isDisabled && setSelectedSource(source)}
+                  key={source.name} 
+                  className={`source-item ${selectedSource === source.name ? 'active' : ''} ${isDisabled ? 'disabled' : ''}`}
+                  onClick={() => !isDisabled && setSelectedSource(source.name)}
                   title={healthStatus.tooltip}
                 >
                   <div className="source-info">
-                    <span className="source-name">{source}</span>
+                    <span className="source-name">{source.name}</span>
                     <div className="source-meta">
                       <span className="source-count">
-                        {articles.filter(a => a.source === source).length}
+                        {articles.filter(a => a.source === source.name).length}
                       </span>
                       {health?.last_ok_at && (
                         <span className="source-timestamp">
@@ -301,7 +304,7 @@ const NewsTerminal: React.FC = () => {
                   <div className="article-header">
                     <div className="article-meta">
                       <span className="source-badge">{article.source}</span>
-                      <span className="article-time">{formatTimeAgo(article.published_at.toString())}</span>
+                      <span className="article-time">{article.published_at ? formatTimeAgo(article.published_at) : "—"}</span>
                     </div>
                   </div>
                   <div className="article-title-row">

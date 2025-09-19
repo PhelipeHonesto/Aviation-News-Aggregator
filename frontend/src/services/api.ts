@@ -1,18 +1,20 @@
+import type {
+  NewsResponse,
+  SourcesResponse,     // <- this was missing
+  BookmarksResponse,
+  SourceHealth,
+  SearchResponse,
+  IngestResponse,
+} from "../types";
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 
 interface NewsParams {
   source?: string;
-  category?: string;
   limit?: number;
   offset?: number;
+  cursor?: string;
   q?: string;
-}
-
-interface IngestResponse {
-  message: string;
-  articles_fetched: number;
-  articles_saved: number;
-  status: string;
 }
 
 class ApiClient {
@@ -44,22 +46,22 @@ class ApiClient {
     const searchParams = new URLSearchParams();
     
     if (params.source) searchParams.append('source', params.source);
-    if (params.category) searchParams.append('category', params.category);
     if (params.limit) searchParams.append('limit', params.limit.toString());
     if (params.offset) searchParams.append('offset', params.offset.toString());
+    if (params.cursor) searchParams.append('cursor', params.cursor);
     if (params.q) searchParams.append('q', params.q);
 
     const endpoint = `/news${searchParams.toString() ? `?${searchParams.toString()}` : ''}`;
-    return this.request<import('../types').NewsResponse>(endpoint);
+    return this.request<NewsResponse>(endpoint);
   }
 
   async searchNews(query: string) {
     const searchParams = new URLSearchParams({ q: query });
-    return this.request<import('../types').SearchResponse>(`/search?${searchParams.toString()}`);
+    return this.request<SearchResponse>(`/search?${searchParams.toString()}`);
   }
 
   async getSources() {
-    return this.request<import('../types').SourcesResponse>('/sources');
+    return this.request<SourcesResponse>('/sources');
   }
 
   async ingestNews() {
@@ -84,7 +86,7 @@ class ApiClient {
   }
 
   async getBookmarks(userId: string = 'default', limit: number = 50) {
-    return this.request<{ bookmarks: import('../types').Bookmark[] }>(`/bookmarks?user_id=${userId}&limit=${limit}`);
+    return this.request<BookmarksResponse>(`/bookmarks?user_id=${userId}&limit=${limit}`);
   }
 
   async checkBookmarkStatus(articleId: number, userId: string = 'default') {
@@ -93,7 +95,7 @@ class ApiClient {
 
   // Source health functions
   async getSourceHealth() {
-    return this.request<{ sources: import('../types').SourceHealth[] }>('/sources/health');
+    return this.request<{ sources: SourceHealth[] }>('/sources/health');
   }
 }
 
