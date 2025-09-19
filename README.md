@@ -1,145 +1,179 @@
-# 🌞 OsaCurator
+# ✈️ Loud Hawk v2 - Aviation News Terminal
 
-**Orange Sunshine Aviation's** intelligent news curation platform designed to democratize aviation education by delivering high-quality, curated aviation news and stories.
+A clean, Bloomberg Terminal-style aviation news aggregator that pulls from 20+ RSS feeds across the aviation industry.
 
-Built with the **OSA Brand Guidelines 2025** - featuring our signature vibrant orange, clean typography, and aviation-inspired design system.
+## 🎯 What It Does
 
-## Features
+**Loud Hawk v2** is your one-stop cockpit dashboard for aviation news. No AI, no auto-posting, just clean aggregation and navigation of all aviation-related content.
 
-- **Automated News Ingestion:** Gathers articles from multiple sources including:
-  - Newsdata.io API for aviation news
-  - SkyWest News press releases
-  - GroundNews aviation content
-  - Institutional sources (FAA, ICAO, IATA)
-- **Curation Workflow:** A simple multi-step process to select, edit, and export articles with status tracking
-- **Export Functionality:** Export curated articles as markdown files for easy sharing and publishing
-- **OSA Brand Design:** Built with Orange Sunshine Aviation's 2025 brand guidelines
-- **Modern UI:** Clean, responsive dashboard with Swiss design principles and aviation aesthetics
-- **Real-time Updates:** WebSocket support for live updates and notifications
-- **Analytics Dashboard:** Track article counts, status breakdowns, and source performance
-- **Mobile-First Design:** Optimized for mobile devices with intuitive swipe gestures
-- **Export Functionality:** Download curated articles as markdown files for easy sharing
-- **SQLite Storage:** Articles are persisted using SQLModel with SQLite and proper indexing
+### Key Features
 
-## Project Structure
+- **📡 RSS Aggregation** - 20+ aviation sources (FAA, NTSB, airlines, OEMs, media)
+- **🖥️ Terminal Interface** - Bloomberg Terminal-inspired dark theme
+- **🔍 Real-time Search** - Full-text search across all articles
+- **📱 Mobile Optimized** - Perfect for pilots on tablets
+- **⚡ Auto-sync** - Background polling every 5 minutes
+- **🎨 Loud Hawk Branding** - Orange/purple accents, professional typography
 
-```
-osacurator/
-├── backend/         # FastAPI backend
-│   ├── agents/      # Modules for ingesting news
-│   ├── .env         # API keys and secrets (must be created)
-│   ├── main.py      # Main FastAPI application
-│   ├── database.py  # SQLModel models and database helpers (SQLite)
-│   └── requirements.txt
-│
-└── frontend/        # React/Vite frontend
-    ├── src/
-    │   ├── components/
-    │   ├── pages/
-    │   └── services/
-    ├── index.html
-    └── package.json
-```
+## 🚀 Quick Start
 
-## Getting Started
-
-Follow these instructions to set up and run the project on your local machine.
-
-### 1. Backend Setup
-
-First, configure the Python backend and install its dependencies.
-
-1.  **Navigate to the backend directory:**
-    ```bash
-    cd backend
-    ```
-
-2.  **Create the environment file:**
-    The application uses a `.env` file to store API keys. Create a file named `.env` in the `backend` directory and add the following content. **Remember to replace the placeholder values with your actual keys.**
-
-    ```
-    NEWSDATA_API_KEY="your_newsdata.io_api_key"
-    ```
-
-3.  **Create and activate a Python virtual environment:**
-    ```bash
-    python3 -m venv venv
-    source venv/bin/activate
-    ```
-
-4.  **Install Python dependencies:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-### 2. Frontend Setup
-
-Next, install the Node.js dependencies for the React frontend.
-
-1.  **Navigate to the frontend directory:**
-    ```bash
-    cd ../frontend 
-    ```
-    *(If you are in the `backend` directory)*
-
-2.  **Install npm dependencies:**
-    ```bash
-    npm install
-    ```
-
-3.  **Build the frontend for production:**
-    ```bash
-    npm run build
-    ```
-
-### 3. Running the Application
-
-You will need two separate terminal windows to run both the backend and frontend servers.
-Alternatively, you can start both at once using the `start_dev.sh` script in the project root:
-
+### Backend
 ```bash
-./start_dev.sh
+cd backend
+pip install -r requirements.txt
+python3 main.py
 ```
 
-1.  **Run the Backend Server:**
-    *   Open a terminal window.
-    *   Navigate to the `backend` directory.
-    *   Activate the virtual environment: `source venv/bin/activate`
-    *   Start the FastAPI server: `uvicorn main:app --reload`
-      *(If running from the project root, use `uvicorn backend.main:app --reload`)*
-    *   The backend will be running at `http://localhost:8000`.
-
-2.  **Run the Frontend Server:**
-    *   Open a **new** terminal window.
-    *   Navigate to the `frontend` directory.
-    *   Start the Vite development server: `npm run dev`
-    *   The frontend will be running at `http://localhost:5173` (or the next available port).
-
-You can now open your web browser to the frontend URL to use the application.
-
-
-### Quick Development Script
-
-To start both the backend and frontend at once, run the helper script from the project root:
-
+### Frontend
 ```bash
-c
+cd frontend
+npm install
+npm run dev
 ```
 
-The script launches the FastAPI backend and Vite frontend concurrently. Press `Ctrl+C` to stop both servers.
+**Access Points:**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+- API Docs: http://localhost:8000/docs
 
-### Pre-commit Hooks
+## 📊 Data Sources
 
-This repository uses `pre-commit` to run linters and formatters automatically.
-If you encounter errors when running the hooks, try upgrading `pre-commit` and
-`identify`:
+### Regulatory & Safety
+- FAA News
+- NTSB Reports
+- EASA Updates
+- ICAO News
 
-```bash
-pip install -U pre-commit identify
+### Airlines
+- Alaska Airlines
+- Southwest
+- American Airlines
+- United Airlines
+- Delta Air Lines
+- JetBlue Airways
+- Spirit Airlines
+- Frontier Airlines
+
+### OEMs
+- Boeing
+- Airbus
+- Embraer
+- Bombardier
+- Gulfstream
+- Cessna
+- Piper
+
+### Media & Industry
+- AVWeb
+- FlightGlobal
+- AeroTime
+- The Points Guy
+- AirlineGeeks
+- Simple Flying
+- Airlines for America
+
+### eVTOL & Future Aviation
+- Joby Aviation
+- Archer Aviation
+- Lilium
+
+### Organizations
+- AOPA
+- NBAA
+- NASA Aeronautics
+
+## 🏗️ Architecture
+
+### Backend (FastAPI)
+- **Models**: Simple `NewsArticle` schema
+- **Database**: PostgreSQL with deduplication
+- **Scheduler**: APScheduler for 5-minute polling
+- **Feeds**: RSS parsing with error handling
+
+### Frontend (React + TypeScript)
+- **Terminal UI**: Dark theme with Loud Hawk branding
+- **Responsive**: Mobile-first design
+- **Real-time**: Auto-refresh and manual sync
+- **Search**: Client-side filtering and server-side search
+
+## 🎨 Design Philosophy
+
+**Bloomberg Terminal meets Aviation** - Professional, data-dense interface optimized for aviation professionals who need quick access to industry news.
+
+### Brand Colors
+- **Orange** (`#f17500`) - Energy, movement, visibility
+- **Purple** (`#6c5ce7`) - Creativity, innovation, mystery
+- **Cream** (`#f8f9fa`) - Neutrality, clarity
+- **Dark** (`#0d1117`) - Terminal background
+
+## 📱 Mobile Experience
+
+Optimized for pilots using tablets in the cockpit:
+- Touch-friendly interface
+- Readable typography
+- Responsive sidebar
+- iOS zoom prevention
+
+## 🔧 API Endpoints
+
+- `GET /news` - Get articles with filtering
+- `GET /search?q=query` - Search articles
+- `GET /sources` - List all sources
+- `POST /ingest` - Manual news sync
+- `GET /health` - Health check
+
+## 🚀 Deployment
+
+### Backend
+- **Database**: SQLite (default) or PostgreSQL
+- **Hosting**: Fly.io / Railway / Render
+- **Environment**: `DATABASE_URL` (optional, defaults to SQLite)
+
+### Frontend
+- **Hosting**: Vercel / Netlify
+- **Environment**: `VITE_API_BASE_URL` for backend URL
+
+## 📈 Performance
+
+- **Deduplication**: Content hashing prevents duplicates
+- **Caching**: Efficient database queries with indexes
+- **Error Handling**: Graceful degradation for failed feeds
+- **Auto-sync**: Background polling without user intervention
+
+## 🔮 Future Roadmap
+
+### v2.1 (Next Sprint)
+- [ ] Article bookmarking/favorites
+- [ ] Email digest features
+- [ ] More RSS feeds
+- [ ] Category filtering
+
+### v2.2 (Future)
+- [ ] Mobile app (React Native)
+- [ ] Push notifications
+- [ ] Custom RSS feed management
+- [ ] Analytics dashboard
+
+## 🛠️ Development
+
+### Adding New Feeds
+Edit `backend/feeds.py` and add to `AVIATION_FEEDS`:
+
+```python
+"New Source": {
+    "url": "https://example.com/rss",
+    "category": "Category",
+    "weight": 5
+}
 ```
 
-You can bypass the hooks temporarily with `git commit --no-verify`.
+### Customizing UI
+Edit `frontend/src/App.css` for styling changes.
 
-## License
+## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+MIT License - Built for the aviation community.
+
+---
+
+**Loud Hawk v2** - Your aviation news cockpit dashboard. ✈️
