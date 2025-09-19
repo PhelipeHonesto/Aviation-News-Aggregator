@@ -1,179 +1,243 @@
-# ✈️ Loud Hawk v2 - Aviation News Terminal
+# 🚀 Loud Hawk v2 - Professional Aviation News Aggregator
 
-A clean, Bloomberg Terminal-style aviation news aggregator that pulls from 20+ RSS feeds across the aviation industry.
+A comprehensive aviation news aggregation platform with intelligent content ranking, dynamic scheduling, and multi-source integration capabilities.
 
-## 🎯 What It Does
+## ✈️ Features
 
-**Loud Hawk v2** is your one-stop cockpit dashboard for aviation news. No AI, no auto-posting, just clean aggregation and navigation of all aviation-related content.
+### **Comprehensive Source Coverage**
+- **74+ aviation sources** globally across all sectors
+- **Regulators**: FAA, NTSB, EASA, ICAO, Transport Canada, UK CAA, CASA Australia
+- **OEMs**: Airbus, Boeing, Embraer, Bombardier, GE Aerospace, Pratt & Whitney, Rolls-Royce
+- **Airlines**: Delta, United, Alaska, American, Southwest, Lufthansa, Air France-KLM
+- **Media**: Aviation Week, FlightGlobal, AVweb, Simple Flying, The Air Current
+- **Industry**: A4A, ACI World, Eurocontrol, NATS
+- **Data Providers**: OAG, Flightradar24, RoutesOnline
+- **eVTOL**: Joby Aviation, Archer Aviation, Eve Air Mobility, Vertical Aerospace
 
-### Key Features
+### **Intelligent Content Management**
+- **Authority-weighted ranking** system prioritizes high-signal sources
+- **Dynamic scheduling** optimizes polling frequency based on source activity
+- **Advanced content filtering** eliminates noise and clickbait
+- **Canonical URL deduplication** prevents duplicate articles
+- **Content hash fingerprinting** for cross-syndication detection
 
-- **📡 RSS Aggregation** - 20+ aviation sources (FAA, NTSB, airlines, OEMs, media)
-- **🖥️ Terminal Interface** - Bloomberg Terminal-inspired dark theme
-- **🔍 Real-time Search** - Full-text search across all articles
-- **📱 Mobile Optimized** - Perfect for pilots on tablets
-- **⚡ Auto-sync** - Background polling every 5 minutes
-- **🎨 Loud Hawk Branding** - Orange/purple accents, professional typography
+### **Reliability & Performance**
+- **Circuit breaker system** auto-disables problematic sources
+- **XML recovery** handles malformed RSS feeds (NTSB, EASA)
+- **Smart fallbacks** between RSS, HTML, JSON, and sitemap strategies
+- **Realistic HTTP headers** to avoid bot detection
+- **Rate limiting** and error handling with graceful degradation
 
-## 🚀 Quick Start
-
-### Backend
-```bash
-cd backend
-pip install -r requirements.txt
-python3 main.py
-```
-
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-**Access Points:**
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:8000
-- API Docs: http://localhost:8000/docs
-
-## 📊 Data Sources
-
-### Regulatory & Safety
-- FAA News
-- NTSB Reports
-- EASA Updates
-- ICAO News
-
-### Airlines
-- Alaska Airlines
-- Southwest
-- American Airlines
-- United Airlines
-- Delta Air Lines
-- JetBlue Airways
-- Spirit Airlines
-- Frontier Airlines
-
-### OEMs
-- Boeing
-- Airbus
-- Embraer
-- Bombardier
-- Gulfstream
-- Cessna
-- Piper
-
-### Media & Industry
-- AVWeb
-- FlightGlobal
-- AeroTime
-- The Points Guy
-- AirlineGeeks
-- Simple Flying
-- Airlines for America
-
-### eVTOL & Future Aviation
-- Joby Aviation
-- Archer Aviation
-- Lilium
-
-### Organizations
-- AOPA
-- NBAA
-- NASA Aeronautics
+### **Advanced Adapters**
+- **12 different adapter strategies** for various source types
+- **RSS Native**: Direct RSS/Atom feeds
+- **RSS Redirected**: Discover RSS via HTML links
+- **HTML Scraping**: With aviation content filtering
+- **JSON API**: WordPress and CMS endpoints
+- **YouTube Integration**: Aviation video content
+- **Sitemap Discovery**: For sources without obvious RSS
 
 ## 🏗️ Architecture
 
-### Backend (FastAPI)
-- **Models**: Simple `NewsArticle` schema
-- **Database**: PostgreSQL with deduplication
-- **Scheduler**: APScheduler for 5-minute polling
-- **Feeds**: RSS parsing with error handling
+### **Backend (Python/FastAPI)**
+```
+backend/
+├── main.py                 # FastAPI application with professional API
+├── models.py              # SQLModel data models with deduplication
+├── database.py            # Database operations and session management
+├── ingest.py              # Multi-strategy news ingestion
+├── source_adapters.py     # Advanced source adapter strategies
+├── ranking_system.py      # Authority-weighted content ranking
+├── dynamic_scheduler.py   # Smart polling frequency management
+├── source_health.py       # Circuit breaker and reliability tracking
+├── youtube_adapter.py     # YouTube channel integration
+├── scheduler.py           # Background task scheduling
+├── sources_loader.py      # CSV source import utility
+├── trusted_sources.yaml   # Source configuration (23+ sources)
+├── osa_sources_seed.csv   # Complete source database (74+ sources)
+└── requirements.txt       # Python dependencies
+```
 
-### Frontend (React + TypeScript)
-- **Terminal UI**: Dark theme with Loud Hawk branding
-- **Responsive**: Mobile-first design
-- **Real-time**: Auto-refresh and manual sync
-- **Search**: Client-side filtering and server-side search
+### **Frontend (React/TypeScript)**
+```
+frontend/
+├── src/
+│   ├── pages/NewsTerminal.tsx  # Main news interface
+│   ├── services/api.ts         # API integration
+│   ├── types/index.ts          # TypeScript definitions
+│   └── App.tsx                 # Application component
+├── package.json               # Node.js dependencies
+└── vite.config.ts            # Vite build configuration
+```
 
-## 🎨 Design Philosophy
+## 🚀 Quick Start
 
-**Bloomberg Terminal meets Aviation** - Professional, data-dense interface optimized for aviation professionals who need quick access to industry news.
+### **Prerequisites**
+- Python 3.9+
+- Node.js 16+
+- SQLite (included with Python)
 
-### Brand Colors
-- **Orange** (`#f17500`) - Energy, movement, visibility
-- **Purple** (`#6c5ce7`) - Creativity, innovation, mystery
-- **Cream** (`#f8f9fa`) - Neutrality, clarity
-- **Dark** (`#0d1117`) - Terminal background
+### **Backend Setup**
+```bash
+# Navigate to backend
+cd backend
 
-## 📱 Mobile Experience
+# Create virtual environment
+python3 -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-Optimized for pilots using tablets in the cockpit:
-- Touch-friendly interface
-- Readable typography
-- Responsive sidebar
-- iOS zoom prevention
+# Install dependencies
+pip install -r requirements.txt
 
-## 🔧 API Endpoints
+# Initialize database
+python3 -c "from database import init_db; init_db()"
 
-- `GET /news` - Get articles with filtering
-- `GET /search?q=query` - Search articles
-- `GET /sources` - List all sources
-- `POST /ingest` - Manual news sync
-- `GET /health` - Health check
+# Start the server
+python3 main.py
+```
 
-## 🚀 Deployment
+The backend will be available at:
+- **API**: http://localhost:8000
+- **Documentation**: http://localhost:8000/docs
+- **Alternative Docs**: http://localhost:8000/redoc
 
-### Backend
-- **Database**: SQLite (default) or PostgreSQL
-- **Hosting**: Fly.io / Railway / Render
-- **Environment**: `DATABASE_URL` (optional, defaults to SQLite)
+### **Frontend Setup**
+```bash
+# Navigate to frontend (in new terminal)
+cd frontend
 
-### Frontend
-- **Hosting**: Vercel / Netlify
-- **Environment**: `VITE_API_BASE_URL` for backend URL
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+The frontend will be available at: http://localhost:5173
+
+## 📊 API Endpoints
+
+### **Core News API**
+- `GET /news` - Get ranked articles with optional filtering
+- `GET /search?q={query}` - Search articles by content
+- `POST /ingest` - Trigger manual news harvest
+
+### **Source Management**
+- `GET /sources` - List all configured sources
+- `GET /sources/health` - Source reliability metrics
+- `GET /sources/activity` - Dynamic scheduling information
+- `POST /sources/{name}/toggle` - Enable/disable sources
+
+### **Advanced Features**
+- `GET /ranking/stats` - Authority ranking analytics
+- `GET /youtube/channels` - YouTube channel information
+- `GET /bookmarks` - User bookmarks management
+
+### **System Health**
+- `GET /health` - System health check
+- `GET /stats` - System statistics
+
+## 🎯 Key Features in Detail
+
+### **Authority Ranking System**
+Sources are ranked by authority and importance:
+- **FAA Newsroom**: 100 (highest authority)
+- **NTSB Press**: 95
+- **EASA News**: 90
+- **ICAO Newsroom**: 85
+- **Airbus/Boeing**: 80
+- **Aviation Week**: 75
+- **Simple Flying**: 50
+- **YouTube Creators**: 35-40
+
+### **Dynamic Scheduling**
+Polling frequencies adapt to source activity:
+- **Fast Movers (3 min)**: Simple Flying, FlightGlobal, AVweb
+- **Steady Sources (10 min)**: FAA, NTSB, EASA, Airbus, Boeing
+- **Moderate Sources (15 min)**: Airlines, industry associations
+- **Slow Movers (30 min)**: IR pages, MROs, airports
+
+### **Content Quality**
+- **Clickbait filtering**: Removes "You Won't Believe", "Amazing", etc.
+- **Aviation keywords**: Rewards relevant aviation content
+- **Promotional filtering**: Removes sales/promotional content
+- **Technical content**: Rewards analysis, reports, studies
+
+## 🔧 Configuration
+
+### **Source Configuration**
+Sources are configured in `trusted_sources.yaml`:
+```yaml
+- name: "FAA Newsroom"
+  category: "REGULATOR"
+  weight: 10
+  kind: "rss"
+  enabled: true
+  home: "https://www.faa.gov/newsroom"
+  discover: true
+```
+
+### **Adding New Sources**
+1. **Use CSV Import**: Add to `osa_sources_seed.csv` and run `sources_loader.py`
+2. **Manual Addition**: Add to `trusted_sources.yaml` with proper format
+3. **API Management**: Use `/sources/{name}/toggle` endpoint
 
 ## 📈 Performance
 
-- **Deduplication**: Content hashing prevents duplicates
-- **Caching**: Efficient database queries with indexes
-- **Error Handling**: Graceful degradation for failed feeds
-- **Auto-sync**: Background polling without user intervention
+### **Current Metrics**
+- **74+ sources** configured globally
+- **23+ sources** actively polling
+- **Dynamic scheduling** optimizing bandwidth
+- **Authority ranking** prioritizing high-signal content
+- **Circuit breakers** maintaining reliability
+- **Content filtering** ensuring aviation relevance
 
-## 🔮 Future Roadmap
-
-### v2.1 (Next Sprint)
-- [ ] Article bookmarking/favorites
-- [ ] Email digest features
-- [ ] More RSS feeds
-- [ ] Category filtering
-
-### v2.2 (Future)
-- [ ] Mobile app (React Native)
-- [ ] Push notifications
-- [ ] Custom RSS feed management
-- [ ] Analytics dashboard
+### **Reliability Features**
+- **Error handling**: Graceful degradation on failures
+- **Health monitoring**: Real-time source status tracking
+- **Auto-recovery**: Smart source re-enabling
+- **XML recovery**: Handles malformed feeds
+- **Rate limiting**: Prevents over-polling
 
 ## 🛠️ Development
 
-### Adding New Feeds
-Edit `backend/feeds.py` and add to `AVIATION_FEEDS`:
+### **Adding New Adapter Strategies**
+1. Define strategy in `source_adapters.py`
+2. Implement fetch logic with error handling
+3. Add to adapter manager
+4. Configure sources to use new strategy
 
-```python
-"New Source": {
-    "url": "https://example.com/rss",
-    "category": "Category",
-    "weight": 5
-}
+### **Extending Ranking System**
+1. Modify authority weights in `ranking_system.py`
+2. Add new quality filters
+3. Adjust scoring algorithm
+4. Test with real data
+
+### **Database Migrations**
+```bash
+# Add new fields to models.py
+# Run database initialization
+python3 -c "from database import init_db; init_db()"
 ```
 
-### Customizing UI
-Edit `frontend/src/App.css` for styling changes.
+## 📝 License
 
-## 📄 License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-MIT License - Built for the aviation community.
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 🎉 Acknowledgments
+
+- **Aviation Community**: For providing valuable feedback and source suggestions
+- **Open Source**: Built with FastAPI, React, SQLModel, and other excellent tools
+- **Data Sources**: All aviation news sources for providing public RSS feeds
 
 ---
 
-**Loud Hawk v2** - Your aviation news cockpit dashboard. ✈️
+**Loud Hawk v2** - Your professional aviation news terminal, now with intelligent ranking and comprehensive coverage! ✈️🚀

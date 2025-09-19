@@ -1,7 +1,8 @@
 {
-  "name": "frontend",
+  "name": "loud-hawk-v2-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "2.0.0",
+  "description": "Loud Hawk v2 - Professional Aviation News Aggregator Frontend",
   "type": "module",
   "scripts": {
     "dev": "vite",

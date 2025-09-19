@@ -1,6 +1,11 @@
 """
 Loud Hawk v2 - Database Operations
-Simple, focused database operations for news aggregation
+
+Professional database management with:
+- Optimized session handling
+- Deduplication logic
+- Performance indexing
+- Error handling and logging
 """
 import os
 from sqlmodel import SQLModel, create_engine, Session
@@ -28,27 +33,30 @@ def get_session():
     return Session(engine)
 
 def save_articles(articles: List[NewsArticle]):
-    """Save articles to database with deduplication"""
+    """Save articles to database with upsert logic to prevent duplicates"""
     with get_session() as session:
         saved_count = 0
         duplicate_count = 0
         
         for article in articles:
             try:
-                # Check if article already exists
-                existing = session.query(NewsArticle).filter(
-                    NewsArticle.content_hash == article.content_hash
-                ).first()
-                
-                if existing:
-                    duplicate_count += 1
-                    continue
-                
-                session.add(article)
-                saved_count += 1
+                # Use upsert logic - try to insert, ignore if exists
+                try:
+                    session.add(article)
+                    session.flush()  # Flush to trigger constraint check
+                    saved_count += 1
+                except Exception as db_error:
+                    # Check if it's a constraint violation (duplicate)
+                    if "UNIQUE constraint failed" in str(db_error) or "duplicate key" in str(db_error):
+                        duplicate_count += 1
+                        session.rollback()  # Rollback the failed insert
+                    else:
+                        # Re-raise if it's a different error
+                        raise db_error
                 
             except Exception as e:
                 logger.error(f"Error saving article {article.title}: {e}")
+                session.rollback()
                 continue
         
         session.commit()
@@ -57,7 +65,6 @@ def save_articles(articles: List[NewsArticle]):
 
 def get_articles(
     source: Optional[str] = None,
-    category: Optional[str] = None,
     limit: int = 50,
     offset: int = 0
 ) -> List[NewsArticle]:
@@ -67,8 +74,6 @@ def get_articles(
         
         if source:
             query = query.filter(NewsArticle.source == source)
-        if category:
-            query = query.filter(NewsArticle.category == category)
         
         return query.order_by(
             NewsArticle.published_at.desc()
@@ -118,8 +123,7 @@ def add_bookmark(article_id: int, user_id: str = "default") -> bool:
                 article_source=article.source,
                 article_url=article.url,
                 article_published_at=article.published_at,
-                article_summary=article.summary,
-                article_category=article.category
+                article_summary=article.summary
             )
             
             session.add(bookmark)

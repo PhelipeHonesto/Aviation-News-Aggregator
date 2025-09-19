@@ -1,0 +1,75 @@
+name,domain,homepage_url,category,region,adapter_strategy,notes
+FAA Newsroom,faa.gov,https://www.faa.gov/newsroom,Regulator,US,SITEMAP_OR_RSS_REDIRECTED,403 on HTML; discover RSS or use sitemap; respect robots
+NTSB Press,ntsb.gov,https://www.ntsb.gov/news/press-releases,Regulator,US,RSS_NATIVE_OR_TIDY_XML,RSS exists but occasionally malformed; use XML recover
+DOT/OST Aviation,transportation.gov,https://www.transportation.gov/newsroom,Regulator,US,HTML_SCRAPE_WHITELIST,Low volume; consider keyword filter 'aviation'
+EASA News,easa.europa.eu,https://www.easa.europa.eu/en/newsroom-and-events/news,Regulator,EU,RSS_REDIRECTED_OR_TIDY_XML,RSS at /en/rss; occasionally malformed
+ICAO Newsroom,icao.int,https://www.icao.int/news,Regulator,Global,RSS_NATIVE,RSS at /rss.xml
+Transport Canada Civil Aviation (TCCA),tc.canada.ca,https://tc.canada.ca/en/aviation,Regulator,CA,HTML_SCRAPE_WHITELIST,Use keyword filter 'News' + aviation
+UK CAA News,caa.co.uk,https://www.caa.co.uk/news/,Regulator,UK,RSS_NATIVE_OR_JSON,Often has RSS; otherwise scrape news list
+CASA Australia News,casa.gov.au,https://www.casa.gov.au/media-releases,Regulator,AU,RSS_NATIVE,Drupal/GovCMS RSS usually available
+DGCA India,dgca.gov.in,https://dgca.gov.in/dgca/news,Regulator,IN,HTML_SCRAPE_WHITELIST,Site changes; low freq
+ANAC Brazil,anac.gov.br,https://www.gov.br/anac/pt-br/assuntos/noticias-anac,Regulator,BR,RSS_NATIVE,Gov.br provides RSS; filter 'aviação'
+CAAC China (News),caac.gov.cn,http://www.caac.gov.cn/en/,Regulator,CN,HTML_SCRAPE_WHITELIST,English site; moderate volume
+DGAC France,ecologie.gouv.fr,https://www.ecologie.gouv.fr/direction-generale-laviation-civile-dgac,Regulator,FR,HTML_SCRAPE_WHITELIST,Filter by 'Communiqués'
+The Aviation Herald,avherald.com,https://avherald.com/,Safety,Global,RSS_NATIVE,High-signal incidents; frequent updates
+Skybrary,skybrary.aero,https://skybrary.aero/accidents-and-incidents,Safety,Global,HTML_SCRAPE_WHITELIST,Reference library; slower cadence
+Airbus Newsroom,airbus.com,https://www.airbus.com/en/newsroom,OEM,EU,RSS_REDIRECTED,RSS at /en/rss.xml
+Boeing Newsroom,boeing.com,https://www.boeing.com/company/news,OEM,US,HTML_SCRAPE_OR_JSON,Newsroom; RSS may be hidden/JSON
+Embraer Media,embraer.com,https://www.embraer.com/global/en/news,OEM,BR,HTML_SCRAPE_OR_JSON,Newsroom paths change; use JSON if present
+Bombardier News,bombardier.com,https://bombardier.com/en/media/news,OEM,CA,RSS_REDIRECTED,RSS at /en/rss.xml
+Gulfstream News,gulfstream.com,https://www.gulfstream.com/en/news,OEM,US,HTML_SCRAPE_WHITELIST,404 on some paths; scrape listing
+Textron Aviation Media,txtav.com,https://media.txtav.com,OEM,US,HTML_SCRAPE_TIDY,AEM/JSON; parse listing
+GE Aerospace Press,geaerospace.com,https://www.geaerospace.com/press-room,OEM,US,RSS_OR_HTML_SCRAPE,May have RSS; otherwise scrape
+Pratt & Whitney News,prattwhitney.com,https://www.prattwhitney.com/news,OEM,US,HTML_SCRAPE_WHITELIST,Paginated; extract cards
+Rolls-Royce Civil Aerospace,rolls-royce.com,https://www.rolls-royce.com/media/our-stories/civil-aerospace.aspx,OEM,UK,HTML_SCRAPE_WHITELIST,Filter 'Press'
+Safran Group News,safran-group.com,https://www.safran-group.com/pressroom,OEM,FR,RSS_NATIVE,Has pressroom feeds
+Collins Aerospace News,collinsaerospace.com,https://www.collinsaerospace.com/newsroom,OEM,US,HTML_SCRAPE_WHITELIST,Sub-brand of RTX
+Honeywell Aerospace,aerospace.honeywell.com,https://aerospace.honeywell.com/en/learn/about-us/news,OEM,US,HTML_SCRAPE_WHITELIST,Frequent product posts
+Delta News Hub,news.delta.com,https://news.delta.com/,Airline,US,RSS_NATIVE,Feed at delta-news-hub.xml
+United Media Room,united.mediaroom.com,https://united.mediaroom.com/,Airline,US,HTML_TIDY_XML,RSS sometimes malformed
+American Airlines Newsroom,news.aa.com,https://news.aa.com/,Airline,US,HTML_SCRAPE_WHITELIST,403 to bots; use real UA+Referer
+Alaska Airlines Newsroom,news.alaskaair.com,https://news.alaskaair.com/,Airline,US,RSS_NATIVE,WordPress feed /feed
+Southwest Newsroom,southwest.com,https://www.swamedia.com/,Airline,US,RSS_NATIVE,Media portal with feeds
+JetBlue Newsroom,news.jetblue.com,https://news.jetblue.com/,Airline,US,HTML_SCRAPE_WHITELIST,403 common; treat gently
+Lufthansa Group News,lufthansagroup.com,https://www.lufthansagroup.com/en/newsroom.html,Airline,DE,HTML_SCRAPE_WHITELIST,Group + subsidiaries
+Air France-KLM Press,airfranceklm.com,https://www.airfranceklm.com/en/newsroom,Airline,FR/NL,HTML_SCRAPE_WHITELIST,Press releases
+Ryanair News,corporate.ryanair.com,https://corporate.ryanair.com/news,Airline,IE,RSS_NATIVE,RSS available
+IAG (BA/Iberia/Vueling) Media,iag.com,https://www.iairgroup.com/en/media,Airline,EU,HTML_SCRAPE_WHITELIST,Group-level news
+easyJet Newsroom,easyjet.com,https://mediacentre.easyjet.com/,Airline,UK,RSS_NATIVE,Media centre feed
+LATAM Newsroom,latamairlinesgroup.net,https://www.latamairlinesgroup.net/news-releases,Airline,LATAM,RSS_OR_HTML_SCRAPE,Investor newsroom often has RSS
+Azul Linhas Aéreas,voeazul.com.br,https://ri.voeazul.com.br/en/news/,Airline,BR,RSS_OR_HTML_SCRAPE,Investor relations
+GOL Linhas Aéreas,ri.voegol.com.br,https://ri.voegol.com.br/en/news/,Airline,BR,RSS_OR_HTML_SCRAPE,IR newsroom
+A4A Airlines for America,airlines.org,https://www.airlines.org/news/,Industry Assoc,US,RSS_NATIVE,Has feeds
+ACI World,aci.aero,https://aci.aero/news/,Industry Assoc,Global,RSS_NATIVE,Frequent traffic/airports news
+Eurocontrol News,eurocontrol.int,https://www.eurocontrol.int/news,ATC/Network,EU,RSS_NATIVE,High-signal ops updates
+NATS (UK ATC) News,nats.aero,https://www.nats.aero/news/,ATC/ANSP,UK,RSS_NATIVE,Feeds available
+FAA Safety Briefing,medium.com,https://medium.com/faa,Safety,US,RSSHUB_OR_MEDIUM_RSS,Medium publishes RSS per tag/publication
+RoutesOnline (Aviation Week Network),routesonline.com,https://www.routesonline.com/news/,Routes,Global,HTML_SCRAPE_WHITELIST,Key for network updates
+OAG Blog/News,oag.com,https://www.oag.com/blog,Data,Global,RSS_NATIVE,Industry data posts
+Cirium Insights,cirium.com,https://www.cirium.com/thoughtcloud,Data,Global,HTML_SCRAPE_WHITELIST,Analysis pieces
+Flightradar24 Blog,flightradar24.com,https://www.flightradar24.com/blog/,Data,Global,RSS_NATIVE,Feed available
+Aviation Week (AW&ST),aviationweek.com,https://aviationweek.com/,Media,Global,RSS_NATIVE,Multiple feeds; some paywalled
+FlightGlobal,flightglobal.com,https://www.flightglobal.com/news,Media,Global,RSS_NATIVE,Multiple topic feeds
+The Air Current,theaircurrent.com,https://theaircurrent.com/,Media,Global,HTML_SCRAPE_WHITELIST,Premium; limited free; RSS minimal
+Simple Flying,simpleflying.com,https://simpleflying.com/,Media,Global,RSS_NATIVE,You already use it
+AirlineGeeks,airlinegeeks.com,https://airlinegeeks.com/,Media,Global,RSS_NATIVE,You already use it
+AVweb,avweb.com,https://www.avweb.com/,Media,Global,RSS_NATIVE,You already use it
+Runway Girl Network,runwaygirlnetwork.com,https://runwaygirlnetwork.com/,Media,Global,RSS_NATIVE,Cabin/IFEC focus
+The Points Guy (Aviation),thepointsguy.com,https://thepointsguy.com/news/,Media,US,RSS_NATIVE,Downweight credit card posts
+One Mile At A Time,onemileatatime.com,https://onemileatatime.com/news/,Media,US,RSS_NATIVE,Routes/cabin news; filter promos
+Live and Let’s Fly,liveandletsfly.com,https://liveandletsfly.com/,Media,US,RSS_NATIVE,Editorial; filter clickbait
+Lufthansa Technik News,lufthansa-technik.com,https://www.lufthansa-technik.com/press-releases,MRO,DE,RSS_NATIVE,Press releases
+ST Engineering Aerospace,stengg.com,https://www.stengg.com/en/newsroom,MRO,SG,HTML_SCRAPE_WHITELIST,Press + features
+MTU Aero Engines,mtu.de,https://www.mtu.de/newsroom,OEM,DE,HTML_SCRAPE_WHITELIST,Press room
+Airbus UpNext / ZEROe,airbus.com,https://www.airbus.com/en/innovation/zero-emission,Sustainability,EU,HTML_SCRAPE_WHITELIST,Greenflight updates
+Boeing Sustainable Aerospace,boeing.com,https://www.boeing.com/principles/sustainability,Sustainability,US,HTML_SCRAPE_WHITELIST,Strategy + news
+Joby Aviation News,jobyaviation.com,https://www.jobyaviation.com/news/,eVTOL,US,RSS_OR_HTML_SCRAPE,IR + newsroom
+Archer Aviation News,archer.com,https://www.archer.com/newsroom,eVTOL,US,HTML_SCRAPE_WHITELIST,Press releases
+Eve Air Mobility,eveairmobility.com,https://www.eveairmobility.com/newsroom,eVTOL,BR,HTML_SCRAPE_WHITELIST,Press + updates
+Vertical Aerospace,vertical-aerospace.com,https://vertical-aerospace.com/news/,eVTOL,UK,HTML_SCRAPE_WHITELIST,Press room
+Heathrow Media Centre,heathrow.com,https://www.heathrow.com/latest-news,Airport,UK,RSS_NATIVE,Feeds available
+ATL Pressroom,atl.com,https://news.atl.com/,Airport,US,RSS_NATIVE,WordPress feed
+LAX News Releases,flylax.com,https://www.lawa.org/en/news-releases,Airport,US,HTML_SCRAPE_WHITELIST,Gov site
+Mentour Pilot (YouTube),youtube.com,https://www.youtube.com/@MentourPilot,Creator,Global,YOUTUBE_API,Route via channel uploads
+DJ’s Aviation (YouTube),youtube.com,https://www.youtube.com/@DjsAviation,Creator,Global,YOUTUBE_API,Route via channel uploads
+FAA Safety Briefing Podcast,faa.gov,https://www.faa.gov/podcasts,Podcast,US,RSS_NATIVE,Podcast RSS available

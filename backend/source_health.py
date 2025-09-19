@@ -15,10 +15,12 @@ from database import engine
 logger = logging.getLogger(__name__)
 
 # Reliability constants
-HTTP_TIMEOUT = 10
+HTTP_TIMEOUT = 15
 MAX_RETRIES = 2
 BACKOFF_BASE = 0.6  # seconds
-CIRCUIT_BREAKER_THRESHOLD = 3  # disable after 3 consecutive failures
+CIRCUIT_BREAKER_THRESHOLD = 4  # disable after 4 consecutive failures
+BOZO_FEED_THRESHOLD = 3  # disable after 3 consecutive bozo feeds
+TIMEOUT_THRESHOLD = 5  # disable after 5 consecutive timeouts
 
 @dataclass
 class SourceHealth:
@@ -29,6 +31,8 @@ class SourceHealth:
     fail_24h: int = 0
     last_ok_at: Optional[datetime] = None
     error_streak: int = 0
+    bozo_streak: int = 0  # Consecutive bozo feeds
+    timeout_streak: int = 0  # Consecutive timeouts
     disabled_reason: Optional[str] = None
     last_error: Optional[str] = None
 
@@ -41,6 +45,8 @@ class SourceReliability(SQLModel, table=True):
     fail_24h: int = Field(default=0)
     last_ok_at: Optional[datetime] = None
     error_streak: int = Field(default=0)
+    bozo_streak: int = Field(default=0)  # Consecutive bozo feeds
+    timeout_streak: int = Field(default=0)  # Consecutive timeouts
     disabled_reason: Optional[str] = None
     last_error: Optional[str] = None
     created_at: datetime = Field(default_factory=datetime.utcnow)
@@ -69,10 +75,22 @@ def fetch_with_reliability(source_name: str, url: str) -> Tuple[Optional[str], O
 
     for attempt in range(MAX_RETRIES + 1):
         try:
+            # Parse domain for referer header
+            from urllib.parse import urlparse
+            domain = urlparse(url).netloc
+            referer = f"https://{domain}/"
+            
             with httpx.Client(
                 timeout=httpx.Timeout(HTTP_TIMEOUT),
-                headers={"User-Agent": "LoudHawkBot/1.0 (+https://loudhawk.com)"},
+                headers={
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+                    "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.8, */*;q=0.7",
+                    "Accept-Language": "en-US,en;q=0.9",
+                    "Referer": referer,
+                    "Cache-Control": "no-cache",
+                },
                 follow_redirects=True,
+                http2=True,
             ) as client:
                 response = client.get(url)
                 
@@ -93,12 +111,16 @@ def fetch_with_reliability(source_name: str, url: str) -> Tuple[Optional[str], O
             if attempt < MAX_RETRIES:
                 backoff(attempt)
             else:
-                record_source_failure(source_name, error_msg)
+                record_source_timeout(source_name, error_msg)
                 return None, error_msg
                 
         except httpx.HTTPStatusError as e:
             error_msg = f"HTTP {e.response.status_code}: {e.response.reason_phrase}"
-            record_source_failure(source_name, error_msg)
+            # Only trip circuit breaker on 4xx errors (except 429 rate limit)
+            if e.response.status_code >= 400 and e.response.status_code < 500 and e.response.status_code != 429:
+                record_source_failure(source_name, error_msg)
+            else:
+                record_source_success(source_name)  # Don't count 429 as failure
             return None, error_msg
             
         except Exception as e:
@@ -163,6 +185,8 @@ def record_source_success(source_name: str) -> None:
         
         record.success_24h += 1
         record.error_streak = 0
+        record.bozo_streak = 0  # Reset bozo streak on success
+        record.timeout_streak = 0  # Reset timeout streak on success
         record.last_ok_at = datetime.utcnow()
         record.last_error = None
         record.updated_at = datetime.utcnow()
@@ -194,6 +218,56 @@ def record_source_failure(source_name: str, error_msg: str) -> None:
         
         session.commit()
         logger.warning(f"Source {source_name} failure recorded: {error_msg}")
+
+def record_source_timeout(source_name: str, error_msg: str) -> None:
+    """Record a timeout for a source"""
+    with Session(engine) as session:
+        record = session.query(SourceReliability).filter(
+            SourceReliability.name == source_name
+        ).first()
+        
+        if not record:
+            record = SourceReliability(name=source_name)
+            session.add(record)
+        
+        record.fail_24h += 1
+        record.timeout_streak += 1
+        record.last_error = error_msg
+        record.updated_at = datetime.utcnow()
+        
+        # Circuit breaker: disable after consecutive timeouts
+        if record.timeout_streak >= TIMEOUT_THRESHOLD:
+            record.enabled = False
+            record.disabled_reason = f"Circuit breaker: {record.timeout_streak} consecutive timeouts"
+            logger.warning(f"Source {source_name} disabled by timeout circuit breaker")
+        
+        session.commit()
+        logger.warning(f"Source {source_name} timeout recorded: {error_msg}")
+
+def record_source_bozo(source_name: str, error_msg: str) -> None:
+    """Record a bozo (malformed) feed for a source"""
+    with Session(engine) as session:
+        record = session.query(SourceReliability).filter(
+            SourceReliability.name == source_name
+        ).first()
+        
+        if not record:
+            record = SourceReliability(name=source_name)
+            session.add(record)
+        
+        record.fail_24h += 1
+        record.bozo_streak += 1
+        record.last_error = error_msg
+        record.updated_at = datetime.utcnow()
+        
+        # Circuit breaker: disable after consecutive bozo feeds
+        if record.bozo_streak >= BOZO_FEED_THRESHOLD:
+            record.enabled = False
+            record.disabled_reason = f"Circuit breaker: {record.bozo_streak} consecutive bozo feeds"
+            logger.warning(f"Source {source_name} disabled by bozo circuit breaker")
+        
+        session.commit()
+        logger.warning(f"Source {source_name} bozo feed recorded: {error_msg}")
 
 def enable_source(source_name: str) -> bool:
     """Enable a source (reset circuit breaker)"""

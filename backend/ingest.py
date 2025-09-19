@@ -1,6 +1,12 @@
 """
 Loud Hawk v2 - Advanced News Ingestion System
-YAML-driven RSS/HTML scraping with auto-discovery
+
+Professional-grade news ingestion with:
+- Multi-strategy source adapters
+- XML recovery for malformed feeds
+- Dynamic scheduling integration
+- Authority-weighted ranking
+- Circuit breaker reliability
 """
 import yaml
 import time
@@ -17,7 +23,10 @@ import re
 
 from models import NewsArticle
 from database import save_articles
-from source_health import fetch_with_reliability, SourceReliability
+from source_health import fetch_with_reliability, SourceReliability, record_source_bozo
+from dynamic_scheduler import dynamic_scheduler
+from ranking_system import ranking_system
+from youtube_adapter import youtube_adapter
 from database import engine
 
 logger = logging.getLogger(__name__)
@@ -33,6 +42,9 @@ class Source:
     url: Optional[str] = None
     selectors: Optional[Dict] = None
     discover: bool = False
+    adapter_strategy: Optional[str] = None
+    notes: Optional[str] = None
+    region: Optional[str] = None
 
 def load_sources(path: str = "trusted_sources.yaml") -> List[Source]:
     """Load sources from YAML configuration"""
@@ -44,17 +56,23 @@ def load_sources(path: str = "trusted_sources.yaml") -> List[Source]:
         logger.error(f"Error loading sources from {path}: {e}")
         return []
 
-# HTTP client with proper headers
+# HTTP client with realistic headers to avoid 403 blocks
 session = httpx.Client(
     timeout=30,
     headers={
-        "User-Agent": "LoudHawkBot/1.0 (+https://loudhawk.com)",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.5",
-        "Accept-Encoding": "gzip, deflate",
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+        "Accept": "application/rss+xml, application/atom+xml, application/xml;q=0.9, text/xml;q=0.8, text/html;q=0.7, */*;q=0.6",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Accept-Encoding": "gzip, deflate, br",
         "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Cache-Control": "max-age=0",
     },
-    follow_redirects=True
+    follow_redirects=True,
+    http2=True
 )
 
 def discover_feeds(home_url: str) -> List[str]:
@@ -149,10 +167,26 @@ def fetch_rss(src: Source) -> List[Dict]:
             logger.warning(f"No content returned for {src.name}")
             return []
         
-        feed = feedparser.parse(content)
+        # Parse with improved options for better XML handling
+        feed = feedparser.parse(content, resolve_relative_uris=True, sanitize_html=True)
         
+        # Handle bozo (malformed XML) feeds
         if feed.bozo:
-            logger.warning(f"RSS feed {src.name} has parsing issues: {feed.bozo_exception}")
+            bozo_error = f"Malformed XML: {feed.bozo_exception}"
+            logger.warning(f"RSS feed {src.name} has parsing issues: {bozo_error}")
+            record_source_bozo(src.name, bozo_error)
+            
+            # Try to recover malformed XML with lxml
+            try:
+                from lxml import etree
+                # Attempt to recover the XML
+                parser = etree.XMLParser(recover=True)
+                tree = etree.fromstring(content.encode(), parser)
+                recovered_content = etree.tostring(tree, encoding='unicode')
+                feed = feedparser.parse(recovered_content, resolve_relative_uris=True, sanitize_html=True)
+                logger.info(f"Successfully recovered XML for {src.name}")
+            except Exception as recovery_error:
+                logger.warning(f"XML recovery failed for {src.name}: {recovery_error}")
         
         items = []
         for entry in feed.entries[:50]:  # Limit to 50 items per feed
@@ -162,48 +196,66 @@ def fetch_rss(src: Source) -> List[Dict]:
             if not link or not title:
                 continue
             
-            # Parse published date
+            # Parse published date with more formats
             published_at = None
-            for date_field in ["published", "updated", "created"]:
+            date_fields = ["published", "updated", "created", "pubDate"]
+            date_formats = [
+                "%a, %d %b %Y %H:%M:%S %z",
+                "%Y-%m-%dT%H:%M:%S%z",
+                "%Y-%m-%dT%H:%M:%SZ",
+                "%Y-%m-%dT%H:%M:%S",
+                "%Y-%m-%d %H:%M:%S",
+                "%Y-%m-%d"
+            ]
+            
+            for date_field in date_fields:
                 if hasattr(entry, date_field):
-                    try:
-                        published_at = datetime.strptime(
-                            entry[date_field], "%a, %d %b %Y %H:%M:%S %z"
-                        )
-                        break
-                    except:
+                    date_str = entry[date_field]
+                    for fmt in date_formats:
                         try:
-                            published_at = datetime.strptime(
-                                entry[date_field], "%Y-%m-%dT%H:%M:%S%z"
-                            )
+                            published_at = datetime.strptime(date_str, fmt)
                             break
                         except:
                             continue
+                    if published_at:
+                        break
+            
+            # Fallback to feed's lastBuildDate if entry date parsing fails
+            if not published_at and hasattr(feed.feed, 'lastBuildDate'):
+                try:
+                    published_at = datetime.strptime(
+                        feed.feed.lastBuildDate, "%a, %d %b %Y %H:%M:%S %z"
+                    )
+                except:
+                    pass
             
             if not published_at:
                 published_at = datetime.utcnow()
             
-            # Clean summary
+            # Clean summary with better HTML stripping
             summary = ""
             for summary_field in ["summary", "description", "content"]:
                 if hasattr(entry, summary_field):
                     summary = entry[summary_field]
-                    # Remove HTML tags
+                    # Remove HTML tags and clean whitespace
                     summary = re.sub(r'<[^>]+>', '', summary).strip()
+                    summary = re.sub(r'\s+', ' ', summary)  # Normalize whitespace
                     break
             
-            # Create content hash for deduplication
-            content_hash = hashlib.sha256(
-                f"{title.lower()}|{src.name.lower()}|{published_at.isoformat()}".encode()
-            ).hexdigest()
+            # Normalize URL and create canonical URL
+            full_url = U.urljoin(url, link)
+            canonical_url = NewsArticle.normalize_url(full_url)
+            
+            # Create content hash for deduplication using new method
+            content_hash = NewsArticle.create_hash(title, canonical_url, published_at)
             
             items.append({
                 "source": src.name,
                 "title": title,
-                "url": U.urljoin(url, link),
+                "url": full_url,
+                "canonical_url": canonical_url,
                 "published_at": published_at,
                 "summary": summary,
-                "category": src.category,
                 "content_hash": content_hash,
                 "weight": src.weight
             })
@@ -280,18 +332,19 @@ def fetch_html(src: Source) -> List[Dict]:
                 summary = sum_el.get_text(strip=True) if sum_el else ""
                 
                 if title and link:
-                    # Create content hash for deduplication
-                    content_hash = hashlib.sha256(
-                        f"{title.lower()}|{src.name.lower()}|{published_at.isoformat()}".encode()
-                    ).hexdigest()
+                    # Normalize URL and create canonical URL
+                    canonical_url = NewsArticle.normalize_url(link)
+                    
+                    # Create content hash for deduplication using new method
+                    content_hash = NewsArticle.create_hash(title, canonical_url, published_at)
                     
                     items.append({
                         "source": src.name,
                         "title": title,
                         "url": link,
+                        "canonical_url": canonical_url,
                         "published_at": published_at,
                         "summary": summary,
-                        "category": src.category,
                         "content_hash": content_hash,
                         "weight": src.weight
                     })
@@ -334,9 +387,9 @@ def harvest_all_sources() -> List[NewsArticle]:
                     source=item["source"],
                     title=item["title"],
                     url=item["url"],
+                    canonical_url=item["canonical_url"],
                     published_at=item["published_at"],
                     summary=item["summary"],
-                    category=item["category"],
                     content_hash=item["content_hash"]
                 )
                 all_articles.append(article)
@@ -362,3 +415,30 @@ def run_harvest():
     except Exception as e:
         logger.error(f"Error during harvest: {e}")
         return 0
+
+def harvest_youtube_sources():
+    """Harvest aviation content from YouTube channels"""
+    try:
+        videos = youtube_adapter.fetch_all_channels(hours_back=24)
+        if videos:
+            logger.info(f"Harvested {len(videos)} YouTube videos")
+            
+            # Convert to NewsArticle objects
+            articles = []
+            for video in videos:
+                article = NewsArticle(
+                    source=video["source"],
+                    title=video["title"],
+                    url=video["url"],
+                    canonical_url=video["canonical_url"],
+                    published_at=video["published_at"],
+                    summary=video.get("summary", ""),
+                    content_hash=video["content_hash"]
+                )
+                articles.append(article)
+            
+            return articles
+    except Exception as e:
+        logger.error(f"Error harvesting YouTube sources: {e}")
+    
+    return []

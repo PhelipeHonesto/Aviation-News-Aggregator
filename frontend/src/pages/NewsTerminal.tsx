@@ -179,29 +179,6 @@ const NewsTerminal: React.FC = () => {
     };
   };
 
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case 'REGULATOR': return '#6c5ce7'; // OSA Purple
-      case 'SAFETY': return '#f17500'; // OSA Orange
-      case 'AIRLINE': return '#00b894'; // Green
-      case 'OEM': return '#0984e3'; // Blue
-      case 'MEDIA': return '#a29bfe'; // Light Purple
-      case 'EVTOL': return '#00cec9'; // Teal
-      default: return '#636e72'; // Gray
-    }
-  };
-
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'REGULATOR': return '🛡️';
-      case 'SAFETY': return '🛡️';
-      case 'OEM': return '🏭';
-      case 'AIRLINE': return '🛫';
-      case 'MEDIA': return '📰';
-      case 'EVTOL': return '🚀';
-      default: return '📄';
-    }
-  };
 
   return (
     <div className="terminal-layout">
@@ -319,22 +296,11 @@ const NewsTerminal: React.FC = () => {
               {articles.map(article => (
                 <div 
                   key={article.id} 
-                  className={`article-card ${article.category?.toLowerCase() || ''}`}
+                  className="article-card"
                 >
                   <div className="article-header">
                     <div className="article-meta">
                       <span className="source-badge">{article.source}</span>
-                      {article.category && (
-                        <span 
-                          className="category-badge" 
-                          style={{ 
-                            backgroundColor: `${getCategoryColor(article.category)}20`,
-                            color: getCategoryColor(article.category)
-                          }}
-                        >
-                          {getCategoryIcon(article.category)} {article.category}
-                        </span>
-                      )}
                       <span className="article-time">{formatTimeAgo(article.published_at.toString())}</span>
                     </div>
                   </div>
@@ -363,24 +329,8 @@ const NewsTerminal: React.FC = () => {
           )}
       </div>
 
-      {/* Right Panel - Filters & Tools */}
+      {/* Right Panel - Tools */}
       <div className="right-panel">
-        <div className="panel-section">
-          <h3 className="section-title">Filters</h3>
-          <div className="filter-group">
-            <label className="filter-label">Categories</label>
-            <div className="category-filters">
-              {['REGULATOR', 'SAFETY', 'OEM', 'AIRLINE', 'MEDIA', 'EVTOL'].map(category => (
-                <label key={category} className="checkbox-label">
-                  <input type="checkbox" defaultChecked />
-                  <span className="checkmark"></span>
-                  {category}
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-
         <div className="panel-section">
           <h3 className="section-title">Bookmarks</h3>
           <div className="bookmarks-list">
@@ -413,19 +363,6 @@ const NewsTerminal: React.FC = () => {
           </div>
         </div>
 
-        <div className="panel-section">
-          <h3 className="section-title">Trending</h3>
-          <div className="trending-keywords">
-            <span className="keyword-tag trending-hot">🔥 737 MAX</span>
-            <span className="keyword-tag trending-hot">🔥 FAA</span>
-            <span className="keyword-tag trending-hot">🔥 Safety</span>
-            <span className="keyword-tag">eVTOL</span>
-            <span className="keyword-tag">SAF</span>
-            <span className="keyword-tag">Air Traffic</span>
-            <span className="keyword-tag">Boeing</span>
-            <span className="keyword-tag">Airbus</span>
-          </div>
-        </div>
       </div>
     </div>
   );

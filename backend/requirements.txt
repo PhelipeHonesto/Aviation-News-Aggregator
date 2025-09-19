@@ -1,11 +1,25 @@
+# Loud Hawk v2 - Python Dependencies
+
+# Web Framework
 fastapi==0.104.1
 uvicorn[standard]==0.24.0
+
+# Database & ORM
 sqlmodel==0.0.14
-requests==2.31.0
-feedparser==6.0.10
-beautifulsoup4==4.12.2
-python-dotenv==1.0.0
 psycopg2-binary==2.9.9
-apscheduler==3.10.4
+
+# HTTP & Web Scraping
 httpx==0.25.0
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
+
+# RSS & Content Processing
+feedparser==6.0.10
+
+# Configuration & Utilities
+python-dotenv==1.0.0
 PyYAML==6.0.1
+
+# Task Scheduling
+apscheduler==3.10.4
