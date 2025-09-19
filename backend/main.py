@@ -30,13 +30,17 @@ from source_health import (
     get_all_source_health, enable_source, disable_source, 
     validate_source, calculate_reliability_score, cleanup_old_health_data
 )
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+from response_models import (
+    NewsResponse, BookmarkListResponse, SourceHealthListResponse,
+    IngestResponse, HealthResponse, SourceToggleResponse, SearchResponse,
+    YouTubeChannelsResponse, RankingStatsResponse, SourceActivityListResponse,
+    ArticleResponse
 )
-logger = logging.getLogger(__name__)
+from logging_config import setup_logging, get_logger, log_api_request
+
+# Setup structured logging
+setup_logging()
+logger = get_logger(__name__)
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -47,13 +51,16 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# CORS configuration
+# CORS configuration - hardened for production
+import os
+allowed_origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=allowed_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization", "Accept"],
 )
 
 # Initialize database on startup
@@ -92,21 +99,25 @@ async def ingest_news():
         logger.error(f"Error during news harvest: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to harvest news: {str(e)}")
 
-@app.get("/news")
+@app.get("/news", response_model=NewsResponse)
 async def get_news(
     source: Optional[str] = Query(None, description="Filter by source"),
     limit: int = Query(50, description="Number of articles to return"),
-    offset: int = Query(0, description="Number of articles to skip")
+    cursor: Optional[str] = Query(None, description="Cursor for pagination")
 ):
-    """Get news articles with optional filtering"""
+    """Get news articles with optional filtering and cursor-based pagination"""
     try:
-        logger.info(f"Fetching news with source={source}, limit={limit}, offset={offset}")
-        articles = get_articles(source=source, limit=limit, offset=offset)
+        logger.info(f"Fetching news with source={source}, limit={limit}, cursor={cursor}")
+        articles, next_cursor = get_articles(source=source, limit=limit, cursor=cursor)
         logger.info(f"Found {len(articles)} articles")
         
-        return {
-            "articles": [article.dict() for article in articles]
-        }
+        return NewsResponse(
+            articles=[ArticleResponse.model_validate(article.model_dump()) for article in articles],
+            total_count=len(articles),
+            limit=limit,
+            offset=0,  # Not used with cursor pagination
+            next_cursor=next_cursor
+        )
         
     except Exception as e:
         logger.error(f"Error fetching news: {e}")
@@ -122,7 +133,7 @@ async def search_news(q: str = Query(..., description="Search query")):
         articles = search_articles(q.strip())
         
         return {
-            "articles": [article.dict() for article in articles]
+            "articles": [article.model_dump() for article in articles]
         }
         
     except Exception as e:
@@ -214,10 +225,47 @@ async def cleanup_health_data():
     cleanup_old_health_data()
     return {"message": "Health data cleaned up successfully"}
 
-@app.get("/health")
+@app.get("/health", response_model=HealthResponse)
 async def health_check():
     """Health check endpoint"""
-    return {"status": "healthy", "timestamp": datetime.utcnow().isoformat()}
+    try:
+        # Check database connection
+        sources = get_sources()
+        active_sources = len([s for s in sources if s])
+        
+        return HealthResponse(
+            status="healthy",
+            timestamp=datetime.utcnow(),
+            sources_active=active_sources
+        )
+    except Exception as e:
+        logger.error(f"Health check failed: {e}")
+        raise HTTPException(status_code=503, detail="Service unhealthy")
+
+
+@app.get("/readyz", response_model=HealthResponse)
+async def readiness_check():
+    """Readiness check endpoint for Kubernetes/Docker"""
+    try:
+        # Check database connectivity
+        sources = get_sources()
+        
+        return HealthResponse(
+            status="ready",
+            timestamp=datetime.utcnow()
+        )
+    except Exception as e:
+        logger.error(f"Readiness check failed: {e}")
+        raise HTTPException(status_code=503, detail="Service not ready")
+
+
+@app.get("/healthz", response_model=HealthResponse)
+async def liveness_check():
+    """Liveness check endpoint for Kubernetes/Docker"""
+    return HealthResponse(
+        status="alive",
+        timestamp=datetime.utcnow()
+    )
 
 # Bookmark endpoints
 @app.post("/bookmarks/{article_id}")

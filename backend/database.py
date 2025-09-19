@@ -12,6 +12,7 @@ from sqlmodel import SQLModel, create_engine, Session
 from models import NewsArticle, Bookmark
 from typing import List, Optional
 import logging
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -66,18 +67,38 @@ def save_articles(articles: List[NewsArticle]):
 def get_articles(
     source: Optional[str] = None,
     limit: int = 50,
-    offset: int = 0
-) -> List[NewsArticle]:
-    """Get articles with optional filtering"""
+    offset: int = 0,
+    cursor: Optional[str] = None
+) -> tuple[List[NewsArticle], Optional[str]]:
+    """Get articles with optional filtering and cursor-based pagination"""
     with get_session() as session:
         query = session.query(NewsArticle)
         
         if source:
             query = query.filter(NewsArticle.source == source)
         
-        return query.order_by(
-            NewsArticle.published_at.desc()
-        ).offset(offset).limit(limit).all()
+        # Apply cursor-based pagination if cursor is provided
+        if cursor:
+            try:
+                # Decode cursor (assuming it's a timestamp)
+                cursor_timestamp = datetime.fromisoformat(cursor)
+                query = query.filter(NewsArticle.published_at < cursor_timestamp)
+            except ValueError:
+                logger.warning(f"Invalid cursor format: {cursor}")
+        
+        # Order by published_at descending for consistent pagination
+        query = query.order_by(NewsArticle.published_at.desc())
+        
+        # Get one extra item to determine if there's a next page
+        articles = query.limit(limit + 1).all()
+        
+        # Determine next cursor
+        next_cursor = None
+        if len(articles) > limit:
+            next_cursor = articles[limit - 1].published_at.isoformat()
+            articles = articles[:limit]
+        
+        return articles, next_cursor
 
 def search_articles(query: str, limit: int = 50) -> List[NewsArticle]:
     """Search articles by title and summary"""
