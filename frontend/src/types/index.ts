@@ -114,7 +114,7 @@ export type ApiError = {
 };
 
 // Component props types
-export type NewsTerminalProps = {};
+export type NewsTerminalProps = Record<string, never>;
 
 export type ArticleCardProps = {
   article: Article;
